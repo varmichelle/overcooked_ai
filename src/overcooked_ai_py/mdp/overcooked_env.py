@@ -209,6 +209,8 @@ class OvercookedEnv(object):
         if done: self._add_episode_info(env_info)
 
         timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"])
+        # print('timestep_sparse_reward', timestep_sparse_reward)
+        # raise Exception('hi')
         return (next_state, timestep_sparse_reward, done, env_info)
 
     # def lossless_state_encoding_mdp(self, state):
@@ -247,28 +249,28 @@ class OvercookedEnv(object):
                                  you need to have a "initial_info" dictionary with the same keys in the "env_params"
         """
         try:
-            print('reset in baseenv (overcookedenv)')
+            # print('reset in baseenv (overcookedenv)')
             if regen_mdp:
-                print('regen_mdp')
-                print('mdp_generator_fn', self.mdp_generator_fn)
+                # print('regen_mdp')
+                # print('mdp_generator_fn', self.mdp_generator_fn)
                 try:
                     self.mdp = self.mdp_generator_fn(outside_info)
                 except:
                     raise Exception('error generating mdp')
-                print('self.mdp', self.mdp)
+                # print('self.mdp', self.mdp)
                 self._mlam = None
                 self._mp = None
             if self.start_state_fn is None:
-                print('L257')
+                # print('L257')
                 try:
                     self.state = self.mdp.get_standard_start_state()
                 except:
                     raise Exception('error getting starting state')
-                print('self.state L260', self.state)
+                # print('self.state L260', self.state)
             else:
-                print('L261')
+                # print('L261')
                 self.state = self.start_state_fn()
-                print('self.state', self.state)
+                # print('self.state', self.state)
 
             events_dict = { k : [ [] for _ in range(self.mdp.num_players) ] for k in EVENT_TYPES }
             rewards_dict = {
@@ -569,13 +571,14 @@ class Overcooked(gym.Env):
         self.base_env = base_env
         self.featurize_fn = featurize_fn
         self.observation_space = self._setup_observation_space()
-        self.action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
+        self.single_agent_action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
+        self.action_space = gym.spaces.MultiDiscrete([len(Action.ALL_ACTIONS), len(Action.ALL_ACTIONS)])  # multi-agent
         self.reset()
 
     def _setup_observation_space(self):
         dummy_mdp = self.base_env.mdp
         dummy_state = dummy_mdp.get_standard_start_state()
-        print('dummy_state', dummy_state)
+        # print('dummy_state', dummy_state)
         obs_shape = self.featurize_fn(dummy_mdp, dummy_state)[0].shape
         high = np.ones(obs_shape) * float("inf")
         return gym.spaces.Box(high * 0, high, dtype=np.float32)
@@ -589,9 +592,9 @@ class Overcooked(gym.Env):
         returns:
             observation: formatted to be standard input for self.agent_idx's policy
         """
-        print('self.action_space', self.action_space)
-        print('action', action)
-        assert all(self.action_space.contains(a) for a in action), "%r (%s) invalid"%(action, type(action))
+        # print('self.action_space', self.action_space)
+        # print('action', action)
+        assert all(self.single_agent_action_space.contains(a) for a in action), "%r (%s) invalid"%(action, type(action))
         agent_action, other_agent_action = [Action.INDEX_TO_ACTION[a] for a in action]
 
         if self.agent_idx == 0:
@@ -612,9 +615,10 @@ class Overcooked(gym.Env):
             env_info["episode"]["policy_agent_idx"] = self.agent_idx
 
         obs = {"both_agent_obs": both_agents_ob,
-                "overcooked_state": next_state,
+                # "overcooked_state": next_state,
                 "other_agent_env_idx": 1 - self.agent_idx}
-        return obs, reward, done, env_info
+        reward_ma = [reward, reward]
+        return obs, reward_ma, done, env_info
 
     def reset(self):
         """
@@ -625,7 +629,7 @@ class Overcooked(gym.Env):
         NOTE: a nicer way to do this would be to just randomize starting positions, and not
         have to deal with randomizing indices.
         """
-        print('RESETTING')
+        # print('RESETTING')
         self.base_env.reset()
         self.mdp = self.base_env.mdp
         self.agent_idx = np.random.choice([0, 1])
@@ -635,7 +639,7 @@ class Overcooked(gym.Env):
             both_agents_ob = (ob_p0, ob_p1)
         else:
             both_agents_ob = (ob_p1, ob_p0)
-        print('finished reset in Overcooked')
+        # print('finished reset in Overcooked')
         return {"both_agent_obs": both_agents_ob, 
                 "overcooked_state": self.base_env.state, 
                 "other_agent_env_idx": 1 - self.agent_idx}

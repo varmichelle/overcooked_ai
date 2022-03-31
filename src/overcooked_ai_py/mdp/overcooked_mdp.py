@@ -23,7 +23,7 @@ class Recipe:
     _conf = {}
     
     def __new__(cls, ingredients):
-        print('cls._configured', cls._configured)
+        # print('cls._configured', cls._configured)
         # traceback.print_stack()
 
         if not cls._configured:
@@ -164,9 +164,9 @@ class Recipe:
     @classmethod
     def configure(cls, conf):
         cls._conf = conf
-        print('cls._configured L167', cls._configured)
+        # print('cls._configured L167', cls._configured)
         cls._configured = True
-        print("CONFIGURED")
+        # print("CONFIGURED")
         # raise Exception('hi')
         cls._computed = False
         cls.MAX_NUM_INGREDIENTS = conf.get('max_num_ingredients', 3)
@@ -273,7 +273,7 @@ class Recipe:
 
     @classmethod
     def from_dict(cls, obj_dict):
-        print("from_dict")
+        # print("from_dict")
         return cls(**obj_dict)
       
 
@@ -619,7 +619,7 @@ class OvercookedState(object):
         timestep (int):  The current timestep of the state
 
         """
-        print("in OvercookedState init")
+        # print("in OvercookedState init")
         bonus_orders = [Recipe.from_dict(order) for order in bonus_orders]
         all_orders = [Recipe.from_dict(order) for order in all_orders]
         for pos, obj in objects.items():
@@ -955,7 +955,7 @@ class OvercookedGridworld(object):
             "all_orders" : start_all_orders,
             **kwargs
         }
-        print('self.recipe_config', self.recipe_config)
+        # print('self.recipe_config', self.recipe_config)
         Recipe.configure(self.recipe_config)
 
     #####################
@@ -1016,15 +1016,15 @@ class OvercookedGridworld(object):
                 raise ValueError('Invalid action')
 
     def get_standard_start_state(self):
-        print('hi in get_standard_start_state')
+        # print('hi in get_standard_start_state')
         if self.start_state:
-            print('in self.start_state')
+            # print('in self.start_state')
             return self.start_state
-        print('otherwise')
+        # print('otherwise')
         start_state = OvercookedState.from_player_positions(
             self.start_player_positions, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders
         )
-        print('done')
+        # print('done')
         return start_state
 
     def get_random_start_state_fn(self, random_start_pos=False, rnd_obj_prob_thresh=0.0):
