@@ -2,8 +2,10 @@ import itertools, copy, warnings
 import numpy as np
 from functools import reduce
 from collections import defaultdict, Counter
-from overcooked_ai_py.utils import pos_distance, read_layout_dict, classproperty
-from overcooked_ai_py.mdp.actions import Action, Direction
+from ..utils import pos_distance, read_layout_dict, classproperty
+from ..mdp.actions import Action, Direction
+
+import traceback
 
 
 class Recipe:
@@ -21,6 +23,9 @@ class Recipe:
     _conf = {}
     
     def __new__(cls, ingredients):
+        print('cls._configured', cls._configured)
+        # traceback.print_stack()
+
         if not cls._configured:
             raise ValueError("Recipe class must be configured before recipes can be created")
         # Some basic argument verification
@@ -159,7 +164,10 @@ class Recipe:
     @classmethod
     def configure(cls, conf):
         cls._conf = conf
+        print('cls._configured L167', cls._configured)
         cls._configured = True
+        print("CONFIGURED")
+        # raise Exception('hi')
         cls._computed = False
         cls.MAX_NUM_INGREDIENTS = conf.get('max_num_ingredients', 3)
 
@@ -265,8 +273,9 @@ class Recipe:
 
     @classmethod
     def from_dict(cls, obj_dict):
+        print("from_dict")
         return cls(**obj_dict)
-        
+      
 
 class ObjectState(object):
     """
@@ -610,6 +619,7 @@ class OvercookedState(object):
         timestep (int):  The current timestep of the state
 
         """
+        print("in OvercookedState init")
         bonus_orders = [Recipe.from_dict(order) for order in bonus_orders]
         all_orders = [Recipe.from_dict(order) for order in all_orders]
         for pos, obj in objects.items():
@@ -945,6 +955,7 @@ class OvercookedGridworld(object):
             "all_orders" : start_all_orders,
             **kwargs
         }
+        print('self.recipe_config', self.recipe_config)
         Recipe.configure(self.recipe_config)
 
     #####################
@@ -1005,11 +1016,15 @@ class OvercookedGridworld(object):
                 raise ValueError('Invalid action')
 
     def get_standard_start_state(self):
+        print('hi in get_standard_start_state')
         if self.start_state:
+            print('in self.start_state')
             return self.start_state
+        print('otherwise')
         start_state = OvercookedState.from_player_positions(
             self.start_player_positions, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders
         )
+        print('done')
         return start_state
 
     def get_random_start_state_fn(self, random_start_pos=False, rnd_obj_prob_thresh=0.0):

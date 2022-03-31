@@ -1,11 +1,11 @@
 import itertools, os
 import numpy as np
 import pickle, time
-from overcooked_ai_py.utils import manhattan_distance
-from overcooked_ai_py.planning.search import Graph, NotConnectedError
-from overcooked_ai_py.mdp.actions import Action, Direction
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedState, PlayerState, OvercookedGridworld, EVENT_TYPES
-from overcooked_ai_py.data.planners import load_saved_action_manager, load_saved_motion_planner, PLANNERS_DIR
+from ..utils import manhattan_distance
+from ..planning.search import Graph, NotConnectedError
+from ..mdp.actions import Action, Direction
+from ..mdp.overcooked_mdp import OvercookedState, PlayerState, OvercookedGridworld, EVENT_TYPES
+from ..data.planners import load_saved_action_manager, load_saved_motion_planner, PLANNERS_DIR
 
 # Run planning logic with additional checks and
 # computation to prevent or identify possible minor errors
@@ -674,7 +674,7 @@ class JointMotionPlanner(object):
         # (not on objects and other aspects of state).
         # Also assumes can't deliver more than two orders in one motion goal
         # (otherwise Environment will terminate)
-        from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
+        from ..mdp.overcooked_env import OvercookedEnv
         dummy_state = OvercookedState.from_players_pos_and_or(joint_start_state, all_orders=self.mdp.start_all_orders)
         env = OvercookedEnv.from_mdp(self.mdp, horizon=200, info_level=int(self.debug)) # Plans should be shorter than 200 timesteps, or something is likely wrong
         successor_state, is_done = env.execute_plan(dummy_state, joint_action_plan)

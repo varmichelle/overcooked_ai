@@ -1,6 +1,6 @@
 import os, pickle
-from overcooked_ai_py.utils import load_dict_from_file
-from overcooked_ai_py.static import PLANNERS_DIR
+from ...utils import load_dict_from_file
+from ...static import PLANNERS_DIR
 
 def load_saved_action_manager(filename):
     with open(os.path.join(PLANNERS_DIR, filename), 'rb') as f:

@@ -4,7 +4,7 @@ from numpy import nan
 from collections import defaultdict
 from pathlib import Path
 from collections.abc import Iterable
-from overcooked_ai_py.static import LAYOUTS_DIR
+from .static import LAYOUTS_DIR
 from collections.abc import Iterable
 
 # I/O

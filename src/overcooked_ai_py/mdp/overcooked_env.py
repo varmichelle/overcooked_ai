@@ -1,11 +1,12 @@
 import gym, tqdm
 import time
 import numpy as np
-from overcooked_ai_py.utils import mean_and_std_err, append_dictionaries
-from overcooked_ai_py.mdp.actions import Action
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, EVENT_TYPES
-from overcooked_ai_py.mdp.overcooked_trajectory import TIMESTEP_TRAJ_KEYS, EPISODE_TRAJ_KEYS, DEFAULT_TRAJ_KEYS
-from overcooked_ai_py.planning.planners import MediumLevelActionManager, MotionPlanner, NO_COUNTERS_PARAMS
+from ..utils import mean_and_std_err, append_dictionaries
+from ..mdp.actions import Action
+from ..mdp.overcooked_mdp import OvercookedGridworld, EVENT_TYPES
+from ..mdp.overcooked_trajectory import TIMESTEP_TRAJ_KEYS, EPISODE_TRAJ_KEYS, DEFAULT_TRAJ_KEYS
+from ..planning.planners import MediumLevelActionManager, MotionPlanner, NO_COUNTERS_PARAMS
+import envs.registration as register
 
 DEFAULT_ENV_PARAMS = {
     "horizon": 400
@@ -210,17 +211,29 @@ class OvercookedEnv(object):
         timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"])
         return (next_state, timestep_sparse_reward, done, env_info)
 
-    def lossless_state_encoding_mdp(self, state):
+    # def lossless_state_encoding_mdp(self, state):
+    #     """
+    #     Wrapper of the mdp's lossless_encoding
+    #     """
+    #     return self.mdp.lossless_state_encoding(state, self.horizon)
+
+    def lossless_state_encoding_mdp(self, mdp, state):
         """
         Wrapper of the mdp's lossless_encoding
         """
         return self.mdp.lossless_state_encoding(state, self.horizon)
 
-    def featurize_state_mdp(self, state, num_pots=2):
+    # def featurize_state_mdp(self, state, num_pots=2):
+    #     """
+    #     Wrapper of the mdp's featurize_state
+    #     """
+    #     return self.mdp.featurize_state(state, self.mlam, num_pots=num_pots)
+
+    def featurize_state_mdp(self, mdp, state):
         """
         Wrapper of the mdp's featurize_state
         """
-        return self.mdp.featurize_state(state, self.mlam, num_pots=num_pots)
+        return self.mdp.featurize_state(state, self.mlam, num_pots=2)
 
     def reset(self, regen_mdp=True, outside_info={}):
         """
@@ -233,21 +246,38 @@ class OvercookedEnv(object):
                                  Please note that, if you intend to use this arguments throughout the run,
                                  you need to have a "initial_info" dictionary with the same keys in the "env_params"
         """
-        if regen_mdp:
-            self.mdp = self.mdp_generator_fn(outside_info)
-            self._mlam = None
-            self._mp = None
-        if self.start_state_fn is None:
-            self.state = self.mdp.get_standard_start_state()
-        else:
-            self.state = self.start_state_fn()
+        try:
+            print('reset in baseenv (overcookedenv)')
+            if regen_mdp:
+                print('regen_mdp')
+                print('mdp_generator_fn', self.mdp_generator_fn)
+                try:
+                    self.mdp = self.mdp_generator_fn(outside_info)
+                except:
+                    raise Exception('error generating mdp')
+                print('self.mdp', self.mdp)
+                self._mlam = None
+                self._mp = None
+            if self.start_state_fn is None:
+                print('L257')
+                try:
+                    self.state = self.mdp.get_standard_start_state()
+                except:
+                    raise Exception('error getting starting state')
+                print('self.state L260', self.state)
+            else:
+                print('L261')
+                self.state = self.start_state_fn()
+                print('self.state', self.state)
 
-        events_dict = { k : [ [] for _ in range(self.mdp.num_players) ] for k in EVENT_TYPES }
-        rewards_dict = {
-            "cumulative_sparse_rewards_by_agent": np.array([0] * self.mdp.num_players),
-            "cumulative_shaped_rewards_by_agent": np.array([0] * self.mdp.num_players)
-        }
-        self.game_stats = {**events_dict, **rewards_dict}
+            events_dict = { k : [ [] for _ in range(self.mdp.num_players) ] for k in EVENT_TYPES }
+            rewards_dict = {
+                "cumulative_sparse_rewards_by_agent": np.array([0] * self.mdp.num_players),
+                "cumulative_shaped_rewards_by_agent": np.array([0] * self.mdp.num_players)
+            }
+            self.game_stats = {**events_dict, **rewards_dict}
+        except:
+            raise Exception("uh oh in reset")
 
     def is_done(self):
         """Whether the episode is over."""
@@ -545,6 +575,7 @@ class Overcooked(gym.Env):
     def _setup_observation_space(self):
         dummy_mdp = self.base_env.mdp
         dummy_state = dummy_mdp.get_standard_start_state()
+        print('dummy_state', dummy_state)
         obs_shape = self.featurize_fn(dummy_mdp, dummy_state)[0].shape
         high = np.ones(obs_shape) * float("inf")
         return gym.spaces.Box(high * 0, high, dtype=np.float32)
@@ -558,6 +589,8 @@ class Overcooked(gym.Env):
         returns:
             observation: formatted to be standard input for self.agent_idx's policy
         """
+        print('self.action_space', self.action_space)
+        print('action', action)
         assert all(self.action_space.contains(a) for a in action), "%r (%s) invalid"%(action, type(action))
         agent_action, other_agent_action = [Action.INDEX_TO_ACTION[a] for a in action]
 
@@ -592,6 +625,7 @@ class Overcooked(gym.Env):
         NOTE: a nicer way to do this would be to just randomize starting positions, and not
         have to deal with randomizing indices.
         """
+        print('RESETTING')
         self.base_env.reset()
         self.mdp = self.base_env.mdp
         self.agent_idx = np.random.choice([0, 1])
@@ -601,9 +635,20 @@ class Overcooked(gym.Env):
             both_agents_ob = (ob_p0, ob_p1)
         else:
             both_agents_ob = (ob_p1, ob_p0)
+        print('finished reset in Overcooked')
         return {"both_agent_obs": both_agents_ob, 
                 "overcooked_state": self.base_env.state, 
                 "other_agent_env_idx": 1 - self.agent_idx}
 
     def render(self, mode="human", close=False):
         pass
+
+if hasattr(__loader__, 'name'):
+    module_path = __loader__.name
+elif hasattr(__loader__, 'fullname'):
+    module_path = __loader__.fullname
+
+register.register(
+    id='Overcooked-v0',
+    entry_point=module_path + ':Overcooked'
+)
