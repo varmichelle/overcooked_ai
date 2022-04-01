@@ -1175,6 +1175,7 @@ class OvercookedGridworld(object):
                 # Give shaped reward if pickup is useful
                 if self.is_dish_pickup_useful(new_state, pot_states):
                     shaped_reward[player_idx] += self.reward_shaping_params["DISH_PICKUP_REWARD"]
+                    # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
                 # Perform dish pickup from dispenser
                 obj = ObjectState('dish', pos)
@@ -1196,6 +1197,7 @@ class OvercookedGridworld(object):
                     obj = new_state.remove_object(i_pos) # Get soup
                     player.set_object(obj)
                     shaped_reward[player_idx] += self.reward_shaping_params["SOUP_PICKUP_REWARD"]
+                    # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
                 elif player.get_object().name in Recipe.ALL_INGREDIENTS:
                     # Adding ingredient to soup
@@ -1211,6 +1213,7 @@ class OvercookedGridworld(object):
                         obj = player.remove_object()
                         soup.add_ingredient(obj)
                         shaped_reward[player_idx] += self.reward_shaping_params["PLACEMENT_IN_POT_REW"]
+                        # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
                         # Log potting
                         self.log_object_potting(events_infos, new_state, old_soup, soup, obj.name, player_idx)
@@ -1223,6 +1226,7 @@ class OvercookedGridworld(object):
 
                     delivery_rew = self.deliver_soup(new_state, player, obj)
                     sparse_reward[player_idx] += delivery_rew
+                    # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
                     # Log soup delivery
                     events_infos['soup_delivery'][player_idx] = True                        

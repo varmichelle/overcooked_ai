@@ -13,6 +13,7 @@ DEFAULT_ENV_PARAMS = {
 }
 
 MAX_HORIZON = 1e10
+SMALL_HORIZON = 500
 
 class OvercookedEnv(object):
     """
@@ -31,7 +32,7 @@ class OvercookedEnv(object):
     # INSTANTIATION METHODS #
     #########################
 
-    def __init__(self, mdp_generator_fn, start_state_fn=None, horizon=MAX_HORIZON, mlam_params=NO_COUNTERS_PARAMS, info_level=0, num_mdp=1, initial_info={}):
+    def __init__(self, mdp_generator_fn, start_state_fn=None, horizon=SMALL_HORIZON, mlam_params=NO_COUNTERS_PARAMS, info_level=0, num_mdp=1, initial_info={}):
         """
         mdp_generator_fn (callable):    A no-argument function that returns a OvercookedGridworld instance
         start_state_fn (callable):      Function that returns start state for the MDP, called at each environment reset
@@ -83,7 +84,7 @@ class OvercookedEnv(object):
         return self._mp
 
     @staticmethod
-    def from_mdp(mdp, start_state_fn=None, horizon=MAX_HORIZON, mlam_params=NO_COUNTERS_PARAMS, info_level=1):
+    def from_mdp(mdp, start_state_fn=None, horizon=SMALL_HORIZON, mlam_params=NO_COUNTERS_PARAMS, info_level=1):
         """
         Create an OvercookedEnv directly from a OvercookedGridworld mdp
         rather than a mdp generating function.
@@ -208,7 +209,7 @@ class OvercookedEnv(object):
         
         if done: self._add_episode_info(env_info)
 
-        timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"])
+        timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"]) + sum(mdp_infos["shaped_reward_by_agent"])
         # print('timestep_sparse_reward', timestep_sparse_reward)
         # raise Exception('hi')
         return (next_state, timestep_sparse_reward, done, env_info)
@@ -283,6 +284,7 @@ class OvercookedEnv(object):
 
     def is_done(self):
         """Whether the episode is over."""
+        # print('self.horizon', self.horizon)
         return self.state.timestep >= self.horizon or self.mdp.is_terminal(self.state)
 
     def potential(self, mlam, state=None, gamma=0.99):
