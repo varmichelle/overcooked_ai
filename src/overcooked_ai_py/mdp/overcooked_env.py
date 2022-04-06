@@ -308,13 +308,11 @@ class OvercookedEnv(object):
         except:
             raise Exception("uh oh in reset")
 
-    def is_done(self):
+    
+    def is_done(self, state=None):
         """Whether the episode is over."""
-        return self.state.timestep >= self.horizon or self.mdp.is_terminal(self.state)
-
-    def is_done(self, state):
-        """Whether the episode is over. Overloaded method taking in a state in case state != self.state 
-        (used for step_no_persist)"""
+        if state is None:
+            state = self.state
         return state.timestep >= self.horizon or self.mdp.is_terminal(state)
 
     def potential(self, mlam, state=None, gamma=0.99):
