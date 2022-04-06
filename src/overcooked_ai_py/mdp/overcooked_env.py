@@ -13,7 +13,7 @@ DEFAULT_ENV_PARAMS = {
 }
 
 MAX_HORIZON = 1e10
-SMALL_HORIZON = 500
+SMALL_HORIZON = 400
 
 class OvercookedEnv(object):
     """
@@ -207,11 +207,37 @@ class OvercookedEnv(object):
         done = self.is_done()
         env_info = self._prepare_info_dict(joint_agent_action_info, mdp_infos)
         
-        if done: self._add_episode_info(env_info)
+        if done: 
+            self._add_episode_info(env_info)
+            print("DONE")
 
         timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"]) + sum(mdp_infos["shaped_reward_by_agent"])
-        # print('timestep_sparse_reward', timestep_sparse_reward)
-        # raise Exception('hi')
+        return (next_state, timestep_sparse_reward, done, env_info)
+    
+    def step_no_persist(self, joint_action, joint_agent_action_info=None, display_phi=False):
+        """Performs a joint action, updating the environment state
+        and providing a reward.
+        
+        On being done, stats about the episode are added to info:
+            ep_sparse_r: the environment sparse reward, given only at soup delivery
+            ep_shaped_r: the component of the reward that is due to reward shaped (excluding sparse rewards)
+            ep_length: length of rollout
+        """
+        assert not self.is_done()
+        if joint_agent_action_info is None: joint_agent_action_info = [{}, {}]
+        next_state, mdp_infos = self.mdp.get_state_transition(self.state, joint_action, display_phi, self.mp)
+
+        # Update game_stats 
+        self._update_game_stats(mdp_infos)
+
+        # Update done
+        done = self.is_done(next_state)
+        env_info = self._prepare_info_dict(joint_agent_action_info, mdp_infos)
+        
+        if done: 
+            self._add_episode_info(env_info)
+
+        timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"]) + sum(mdp_infos["shaped_reward_by_agent"])
         return (next_state, timestep_sparse_reward, done, env_info)
 
     # def lossless_state_encoding_mdp(self, state):
@@ -284,8 +310,12 @@ class OvercookedEnv(object):
 
     def is_done(self):
         """Whether the episode is over."""
-        # print('self.horizon', self.horizon)
         return self.state.timestep >= self.horizon or self.mdp.is_terminal(self.state)
+
+    def is_done(self, state):
+        """Whether the episode is over. Overloaded method taking in a state in case state != self.state 
+        (used for step_no_persist)"""
+        return state.timestep >= self.horizon or self.mdp.is_terminal(state)
 
     def potential(self, mlam, state=None, gamma=0.99):
         """
@@ -572,7 +602,10 @@ class Overcooked(gym.Env):
 
         self.base_env = base_env
         self.featurize_fn = featurize_fn
+        # print('featurize_fn', featurize_fn)
         self.observation_space = self._setup_observation_space()
+        # print('self.observation_space', self.observation_space)
+        # raise Exception('hi')
         self.single_agent_action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
         self.action_space = gym.spaces.MultiDiscrete([len(Action.ALL_ACTIONS), len(Action.ALL_ACTIONS)])  # multi-agent
         self.reset()
@@ -581,7 +614,10 @@ class Overcooked(gym.Env):
         dummy_mdp = self.base_env.mdp
         dummy_state = dummy_mdp.get_standard_start_state()
         # print('dummy_state', dummy_state)
+        obs = self.featurize_fn(dummy_mdp, dummy_state)[0]
+        # print('obs', obs)
         obs_shape = self.featurize_fn(dummy_mdp, dummy_state)[0].shape
+        # print('obs_shape', obs_shape)
         high = np.ones(obs_shape) * float("inf")
         return gym.spaces.Box(high * 0, high, dtype=np.float32)
 
@@ -594,8 +630,6 @@ class Overcooked(gym.Env):
         returns:
             observation: formatted to be standard input for self.agent_idx's policy
         """
-        # print('self.action_space', self.action_space)
-        # print('action', action)
         assert all(self.single_agent_action_space.contains(a) for a in action), "%r (%s) invalid"%(action, type(action))
         agent_action, other_agent_action = [Action.INDEX_TO_ACTION[a] for a in action]
 
@@ -605,6 +639,41 @@ class Overcooked(gym.Env):
             joint_action = (other_agent_action, agent_action)
 
         next_state, reward, done, env_info = self.base_env.step(joint_action)
+        ob_p0, ob_p1 = self.featurize_fn(self.mdp, next_state)
+        if self.agent_idx == 0:
+            both_agents_ob = (ob_p0, ob_p1)
+        else:
+            both_agents_ob = (ob_p1, ob_p0)
+        
+        env_info["policy_agent_idx"] = self.agent_idx
+
+        if "episode" in env_info.keys():
+            env_info["episode"]["policy_agent_idx"] = self.agent_idx
+
+        obs = {"both_agent_obs": both_agents_ob,
+                # "overcooked_state": next_state,
+                "other_agent_env_idx": 1 - self.agent_idx}
+        reward_ma = [reward, reward]
+        return obs, reward_ma, done, env_info
+
+    def step_no_persist(self, action):
+        """
+        action: 
+            (agent with index self.agent_idx action, other agent action)
+            is a tuple with the joint action of the primary and secondary agents in index format
+        
+        returns:
+            observation: formatted to be standard input for self.agent_idx's policy
+        """
+        assert all(self.single_agent_action_space.contains(a) for a in action), "%r (%s) invalid"%(action, type(action))
+        agent_action, other_agent_action = [Action.INDEX_TO_ACTION[a] for a in action]
+
+        if self.agent_idx == 0:
+            joint_action = (agent_action, other_agent_action)
+        else:
+            joint_action = (other_agent_action, agent_action)
+
+        next_state, reward, done, env_info = self.base_env.step_no_persist(joint_action)
         ob_p0, ob_p1 = self.featurize_fn(self.mdp, next_state)
         if self.agent_idx == 0:
             both_agents_ob = (ob_p0, ob_p1)

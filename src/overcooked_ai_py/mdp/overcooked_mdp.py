@@ -1969,12 +1969,14 @@ class OvercookedGridworld(object):
             state_mask_stack = np.transpose(state_mask_stack, (1, 2, 0))
             assert state_mask_stack.shape[:2] == self.shape
             assert state_mask_stack.shape[2] == len(LAYERS)
+            # print('len(LAYERS)', len(LAYERS))
             # NOTE: currently not including time left or order_list in featurization
             return np.array(state_mask_stack).astype(int)
 
         # NOTE: Currently not very efficient, a decent amount of computation repeated here
         num_players = len(overcooked_state.players)
         final_obs_for_players = tuple(process_for_player(i) for i in range(num_players))
+        # print('process_for_player(0)', process_for_player(0))
         return final_obs_for_players
 
     @property
