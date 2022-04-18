@@ -210,7 +210,7 @@ class OvercookedEnv(object):
         if done: 
             self._add_episode_info(env_info)
 
-        timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"]) + sum(mdp_infos["shaped_reward_by_agent"])
+        timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"]) # + sum(mdp_infos["shaped_reward_by_agent"])
         return (next_state, timestep_sparse_reward, done, env_info)
     
     def step_no_persist(self, joint_action, joint_agent_action_info=None, display_phi=False):
@@ -236,7 +236,7 @@ class OvercookedEnv(object):
         if done: 
             self._add_episode_info(env_info)
 
-        timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"]) + sum(mdp_infos["shaped_reward_by_agent"])
+        timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"]) # + sum(mdp_infos["shaped_reward_by_agent"])
         return (next_state, timestep_sparse_reward, done, env_info)
 
     # def lossless_state_encoding_mdp(self, state):
@@ -599,10 +599,7 @@ class Overcooked(gym.Env):
 
         self.base_env = base_env
         self.featurize_fn = featurize_fn
-        # print('featurize_fn', featurize_fn)
         self.observation_space = self._setup_observation_space()
-        # print('self.observation_space', self.observation_space)
-        # raise Exception('hi')
         self.single_agent_action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
         self.action_space = gym.spaces.MultiDiscrete([len(Action.ALL_ACTIONS), len(Action.ALL_ACTIONS)])  # multi-agent
         self.reset()
@@ -610,11 +607,8 @@ class Overcooked(gym.Env):
     def _setup_observation_space(self):
         dummy_mdp = self.base_env.mdp
         dummy_state = dummy_mdp.get_standard_start_state()
-        # print('dummy_state', dummy_state)
         obs = self.featurize_fn(dummy_mdp, dummy_state)[0]
-        # print('obs', obs)
         obs_shape = self.featurize_fn(dummy_mdp, dummy_state)[0].shape
-        # print('obs_shape', obs_shape)
         high = np.ones(obs_shape) * float("inf")
         return gym.spaces.Box(high * 0, high, dtype=np.float32)
 
@@ -635,7 +629,7 @@ class Overcooked(gym.Env):
         else:
             joint_action = (other_agent_action, agent_action)
 
-        next_state, reward, done, env_info = self.base_env.step(joint_action)
+        next_state, sparse_reward, done, env_info = self.base_env.step(joint_action)
         ob_p0, ob_p1 = self.featurize_fn(self.mdp, next_state)
         if self.agent_idx == 0:
             both_agents_ob = (ob_p0, ob_p1)
@@ -650,7 +644,14 @@ class Overcooked(gym.Env):
         obs = {"both_agent_obs": both_agents_ob,
                 # "overcooked_state": next_state,
                 "other_agent_env_idx": 1 - self.agent_idx}
-        reward_ma = [reward, reward]
+        
+        reward_p0 = sparse_reward + env_info['shaped_r_by_agent'][0]
+        reward_p1 = sparse_reward + env_info['shaped_r_by_agent'][1]
+
+        if self.agent_idx == 0:
+            reward_ma = [reward_p0, reward_p1]
+        else:
+            reward_ma = [reward_p1, reward_p0]
         return obs, reward_ma, done, env_info
 
     def step_no_persist(self, action):
@@ -670,7 +671,7 @@ class Overcooked(gym.Env):
         else:
             joint_action = (other_agent_action, agent_action)
 
-        next_state, reward, done, env_info = self.base_env.step_no_persist(joint_action)
+        next_state, sparse_reward, done, env_info = self.base_env.step_no_persist(joint_action)
         ob_p0, ob_p1 = self.featurize_fn(self.mdp, next_state)
         if self.agent_idx == 0:
             both_agents_ob = (ob_p0, ob_p1)
@@ -684,8 +685,16 @@ class Overcooked(gym.Env):
 
         obs = {"both_agent_obs": both_agents_ob,
                 # "overcooked_state": next_state,
-                "other_agent_env_idx": 1 - self.agent_idx}
-        reward_ma = [reward, reward]
+                "other_agent_env_idx": 1 - self.agent_idx,
+                "policy_agent_idx": self.agent_idx}
+
+        reward_p0 = sparse_reward + env_info['shaped_r_by_agent'][0]
+        reward_p1 = sparse_reward + env_info['shaped_r_by_agent'][1]
+
+        if self.agent_idx == 0:
+            reward_ma = [reward_p0, reward_p1]
+        else:
+            reward_ma = [reward_p1, reward_p0]
         return obs, reward_ma, done, env_info
 
     def reset(self):
@@ -697,17 +706,16 @@ class Overcooked(gym.Env):
         NOTE: a nicer way to do this would be to just randomize starting positions, and not
         have to deal with randomizing indices.
         """
-        # print('RESETTING')
         self.base_env.reset()
         self.mdp = self.base_env.mdp
-        self.agent_idx = np.random.choice([0, 1])
+        # self.agent_idx = np.random.choice([0, 1])
+        self.agent_idx = 0
         ob_p0, ob_p1 = self.featurize_fn(self.mdp, self.base_env.state)
 
         if self.agent_idx == 0:
             both_agents_ob = (ob_p0, ob_p1)
         else:
             both_agents_ob = (ob_p1, ob_p0)
-        # print('finished reset in Overcooked')
         return {"both_agent_obs": both_agents_ob, 
                 "overcooked_state": self.base_env.state, 
                 "other_agent_env_idx": 1 - self.agent_idx}
