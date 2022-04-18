@@ -209,7 +209,6 @@ class OvercookedEnv(object):
         
         if done: 
             self._add_episode_info(env_info)
-            print("DONE")
 
         timestep_sparse_reward = sum(mdp_infos["sparse_reward_by_agent"]) + sum(mdp_infos["shaped_reward_by_agent"])
         return (next_state, timestep_sparse_reward, done, env_info)
