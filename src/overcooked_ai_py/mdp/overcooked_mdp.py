@@ -421,7 +421,8 @@ class SoupState(ObjectState):
 
     @property
     def is_full(self):
-        return not self.is_idle or len(self.ingredients) == Recipe.MAX_NUM_INGREDIENTS
+        full = not self.is_idle or len(self.ingredients) == Recipe.MAX_NUM_INGREDIENTS
+        return full
 
     def is_valid(self):
         if not all([ingredient.position == self.position for ingredient in self._ingredients]):
