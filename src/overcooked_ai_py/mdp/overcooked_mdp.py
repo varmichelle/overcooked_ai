@@ -623,6 +623,7 @@ class OvercookedState(object):
         # print("in OvercookedState init")
         bonus_orders = [Recipe.from_dict(order) for order in bonus_orders]
         all_orders = [Recipe.from_dict(order) for order in all_orders]
+
         for pos, obj in objects.items():
             assert obj.position == pos
         self.players = tuple(players)
@@ -1224,7 +1225,6 @@ class OvercookedGridworld(object):
             elif terrain_type == 'S' and player.has_object():
                 obj = player.get_object()
                 if obj.name == 'soup':
-
                     delivery_rew = self.deliver_soup(new_state, player, obj)
                     sparse_reward[player_idx] += delivery_rew
                     # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
@@ -1242,10 +1242,13 @@ class OvercookedGridworld(object):
         if recipe is in bonus orders, and receives base value otherwise
         """
         if not discounted:
+
             if not recipe in state.all_orders:
                 return 0
             
             if not recipe in state.bonus_orders:
+                # print('state.all_orders', state.all_orders)
+                # print('recipe.value', recipe.value)
                 return recipe.value
 
             return self.order_bonus * recipe.value
@@ -1271,7 +1274,11 @@ class OvercookedGridworld(object):
         assert soup.is_ready, "Tried to deliever soup that isn't ready"
         player.remove_object()
 
-        return self.get_recipe_value(state, soup.recipe)
+        value = self.get_recipe_value(state, soup.recipe)
+        if value > 0:
+            print('value', value)
+            print('soup.recipe', soup.recipe)
+        return value
 
     def resolve_movement(self, state, joint_action):
         """Resolve player movement and deal with possible collisions"""

@@ -9,11 +9,11 @@ from ..planning.planners import MediumLevelActionManager, MotionPlanner, NO_COUN
 import envs.registration as register
 
 DEFAULT_ENV_PARAMS = {
-    "horizon": 40
+    "horizon": 50
 }
 
 MAX_HORIZON = 1e10
-SMALL_HORIZON = 40
+SMALL_HORIZON = 50
 
 class OvercookedEnv(object):
     """
@@ -721,7 +721,10 @@ class Overcooked(gym.Env):
                 "other_agent_env_idx": 1 - self.agent_idx}
 
     def render(self, mode="human", close=False):
-        pass
+        print(self.base_env)
+        print()
+        print()
+        print()
 
 if hasattr(__loader__, 'name'):
     module_path = __loader__.name
