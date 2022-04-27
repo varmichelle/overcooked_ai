@@ -1,8 +1,8 @@
 {
-    "grid":  """XOXX
+    "grid":  """XXXX
                 X1XX
-                D  P
-                XPSX
+                DX P
+                XXSX
                 D  P
                 X XX
                 X2XX
@@ -14,7 +14,7 @@
     ],
     "tomato_time" : 1,
     "onion_time" : 1,
-    "tomato_value" : 10,
-    "onion_value" : 10,
+    "tomato_value" : 100,
+    "onion_value" : 100,
     "rew_shaping_params": None
 }

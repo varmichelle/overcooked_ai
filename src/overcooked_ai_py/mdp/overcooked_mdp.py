@@ -113,6 +113,10 @@ class Recipe:
             return self._delivery_reward
         if self._value_mapping and self in self._value_mapping:
             return self._value_mapping[self]
+        # print('self._onion_value', self._onion_value)
+        # print('self._tomato_value', self._tomato_value)
+        # print('Recipe._onion_value', Recipe._onion_value)
+        # print('Recipe._tomato_value', Recipe._tomato_value)
         if self._onion_value and self._tomato_value:
             num_onions = len([ingredient for ingredient in self.ingredients if ingredient == self.ONION])
             num_tomatoes = len([ingredient for ingredient in self.ingredients if ingredient == self.TOMATO])
@@ -792,7 +796,9 @@ BASE_REW_SHAPING_PARAMS = {
     "SOUP_PICKUP_REWARD": 5,
     "DISH_DISP_DISTANCE_REW": 0,
     "POT_DISTANCE_REW": 0,
-    "SOUP_DISTANCE_REW": 0
+    "SOUP_DISTANCE_REW": 0,
+    "TOMATO_PICKUP_REWARD": 0,
+    "ONION_PICKUP_REWARD": 0,
 }
 
 EVENT_TYPES = [
@@ -1162,6 +1168,8 @@ class OvercookedGridworld(object):
 
             elif terrain_type == 'O' and player.held_object is None:
                 self.log_object_pickup(events_infos, new_state, "onion", pot_states, player_idx)
+                # if self.is_ingredient_pickup_useful(new_state, pot_states, player_idx):
+                #     shaped_reward[player_idx] += self.reward_shaping_params["ONION_PICKUP_REWARD"]
 
                 # Onion pickup from dispenser
                 obj = ObjectState('onion', pos)
@@ -1169,6 +1177,8 @@ class OvercookedGridworld(object):
 
             elif terrain_type == 'T' and player.held_object is None:
                 self.log_object_pickup(events_infos, new_state, "tomato", pot_states, player_idx)
+                # if self.is_ingredient_pickup_useful(new_state, pot_states, player_idx):
+                #     shaped_reward[player_idx] += self.reward_shaping_params["TOMATO_PICKUP_REWARD"]
 
                 # Tomato pickup from dispenser
                 player.set_object(ObjectState('tomato', pos))
@@ -1227,7 +1237,7 @@ class OvercookedGridworld(object):
             elif terrain_type == 'S' and player.has_object():
                 obj = player.get_object()
                 if obj.name == 'soup':
-                    delivery_rew = self.deliver_soup(new_state, player, obj)
+                    delivery_rew = self.deliver_soup(new_state, player, obj, player_idx)
                     sparse_reward[player_idx] += delivery_rew
                     # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
@@ -1267,7 +1277,7 @@ class OvercookedGridworld(object):
 
             return gamma**recipe.time * gamma**(pot_onion_steps * n_onions) * gamma**(pot_tomato_steps * n_tomatoes) * self.get_recipe_value(state, recipe, discounted=False)
 
-    def deliver_soup(self, state, player, soup):
+    def deliver_soup(self, state, player, soup, player_idx):
         """
         Deliver the soup, and get reward if there is no order list
         or if the type of the delivered soup matches the next order.
@@ -1278,6 +1288,7 @@ class OvercookedGridworld(object):
 
         value = self.get_recipe_value(state, soup.recipe)
         if value > 0:
+            print('player_idx', player_idx)
             print('value', value)
             print('soup.recipe', soup.recipe)
         return value

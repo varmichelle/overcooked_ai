@@ -9,11 +9,11 @@ from ..planning.planners import MediumLevelActionManager, MotionPlanner, NO_COUN
 import envs.registration as register
 
 DEFAULT_ENV_PARAMS = {
-    "horizon": 50
+    "horizon": 100
 }
 
 MAX_HORIZON = 1e10
-SMALL_HORIZON = 50
+SMALL_HORIZON = 100
 
 class OvercookedEnv(object):
     """
