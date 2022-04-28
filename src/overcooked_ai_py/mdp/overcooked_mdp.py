@@ -1164,7 +1164,6 @@ class OvercookedGridworld(object):
                     # Pick up object from counter
                     obj = new_state.remove_object(i_pos)
                     player.set_object(obj)
-                    
 
             elif terrain_type == 'O' and player.held_object is None:
                 self.log_object_pickup(events_infos, new_state, "onion", pot_states, player_idx)
@@ -1203,7 +1202,7 @@ class OvercookedGridworld(object):
             
             elif terrain_type == 'P' and player.has_object():
 
-                if player.get_object().name == 'dish' and self.soup_ready_at_location(new_state, i_pos):
+                if player.get_object().name == 'dish' and self.soup_ready_at_location(new_state, i_pos, player_idx):
                     self.log_object_pickup(events_infos, new_state, "soup", pot_states, player_idx)
 
                     # Pick up soup
@@ -1483,11 +1482,17 @@ class OvercookedGridworld(object):
     def get_partially_full_pots(self, pot_states):
         return list(set().union(*[pot_states['{}_items'.format(i)] for i in range(1, Recipe.MAX_NUM_INGREDIENTS)]))
 
-    def soup_ready_at_location(self, state, pos):
+    def soup_ready_at_location(self, state, pos, player_idx):
         if not state.has_object(pos):
             return False
         obj = state.get_object(pos)
         assert obj.name == 'soup', 'Object in pot was not soup'
+        num_tomatoes = len([_ for _ in obj.ingredients if _ == Recipe.TOMATO])
+        num_onions = len([_ for _ in obj.ingredients if _ == Recipe.ONION])
+        if num_tomatoes == 0 and player_idx == 1:
+            return False
+        if num_onions == 0 and player_idx == 0:
+            return False
         return obj.is_ready
 
     def soup_to_be_cooked_at_location(self, state, pos):
