@@ -1286,10 +1286,10 @@ class OvercookedGridworld(object):
         player.remove_object()
 
         value = self.get_recipe_value(state, soup.recipe)
-        if value > 0:
-            print('player_idx', player_idx)
-            print('value', value)
-            print('soup.recipe', soup.recipe)
+        # if value > 0:
+        #     print('player_idx', player_idx)
+        #     print('value', value)
+        #     print('soup.recipe', soup.recipe)
         return value
 
     def resolve_movement(self, state, joint_action):

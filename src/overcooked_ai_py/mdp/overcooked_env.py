@@ -205,7 +205,7 @@ class OvercookedEnv(object):
         # Update state and done
         self.state = next_state
         done = self.is_done()
-        env_info = self._prepare_info_dict(joint_agent_action_info, mdp_infos)
+        env_info = self._prepare_info_dict(joint_agent_action_info, mdp_infos, self.state.timestep)
         
         if done: 
             self._add_episode_info(env_info)
@@ -231,7 +231,7 @@ class OvercookedEnv(object):
 
         # Update done
         done = self.is_done(next_state)
-        env_info = self._prepare_info_dict(joint_agent_action_info, mdp_infos)
+        env_info = self._prepare_info_dict(joint_agent_action_info, mdp_infos, next_state.timestep)
         
         if done: 
             self._add_episode_info(env_info)
@@ -326,7 +326,7 @@ class OvercookedEnv(object):
         state = state if state else self.state
         return self.mdp.potential_function(state, mp=mlam.motion_planner ,gamma=gamma)
 
-    def _prepare_info_dict(self, joint_agent_action_info, mdp_infos):
+    def _prepare_info_dict(self, joint_agent_action_info, mdp_infos, timestep):
         """
         The normal timestep info dict will contain infos specifc to each agent's action taken,
         and reward shaping information.
@@ -339,6 +339,7 @@ class OvercookedEnv(object):
         env_info["shaped_r_by_agent"] = mdp_infos["shaped_reward_by_agent"]
         env_info["phi_s"] = mdp_infos["phi_s"] if "phi_s" in mdp_infos else None
         env_info["phi_s_prime"] = mdp_infos["phi_s_prime"] if "phi_s_prime" in mdp_infos else None
+        env_info["timestep"] = timestep
         return env_info
 
     def _add_episode_info(self, env_info):
@@ -610,7 +611,12 @@ class Overcooked(gym.Env):
         obs = self.featurize_fn(dummy_mdp, dummy_state)[0]
         obs_shape = self.featurize_fn(dummy_mdp, dummy_state)[0].shape
         high = np.ones(obs_shape) * float("inf")
-        return gym.spaces.Box(high * 0, high, dtype=np.float32)
+        self.image_obs_space = gym.spaces.Box(high * 0, high, dtype=np.float32)
+        self.time_obs_space = gym.spaces.Discrete(SMALL_HORIZON+1)
+        self.observation_space = gym.spaces.Dict(
+            {'obs': self.image_obs_space,
+            'time': self.time_obs_space})
+        return self.observation_space
 
     def step(self, action):
         """
@@ -643,7 +649,8 @@ class Overcooked(gym.Env):
 
         obs = {"both_agent_obs": both_agents_ob,
                 # "overcooked_state": next_state,
-                "other_agent_env_idx": 1 - self.agent_idx}
+                "other_agent_env_idx": 1 - self.agent_idx,
+                "time": next_state.timestep}
         
         reward_p0 = sparse_reward + env_info['shaped_r_by_agent'][0]
         reward_p1 = sparse_reward + env_info['shaped_r_by_agent'][1]
@@ -686,7 +693,8 @@ class Overcooked(gym.Env):
         obs = {"both_agent_obs": both_agents_ob,
                 # "overcooked_state": next_state,
                 "other_agent_env_idx": 1 - self.agent_idx,
-                "policy_agent_idx": self.agent_idx}
+                "policy_agent_idx": self.agent_idx,
+                "time": next_state.timestep}
 
         reward_p0 = sparse_reward + env_info['shaped_r_by_agent'][0]
         reward_p1 = sparse_reward + env_info['shaped_r_by_agent'][1]
@@ -718,7 +726,8 @@ class Overcooked(gym.Env):
             both_agents_ob = (ob_p1, ob_p0)
         return {"both_agent_obs": both_agents_ob, 
                 "overcooked_state": self.base_env.state, 
-                "other_agent_env_idx": 1 - self.agent_idx}
+                "other_agent_env_idx": 1 - self.agent_idx,
+                "time": 0}
 
     def render(self, mode="human", close=False):
         print(self.base_env)
