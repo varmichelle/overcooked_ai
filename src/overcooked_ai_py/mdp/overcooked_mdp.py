@@ -1487,6 +1487,7 @@ class OvercookedGridworld(object):
             return False
         obj = state.get_object(pos)
         assert obj.name == 'soup', 'Object in pot was not soup'
+        # THE RULE
         num_tomatoes = len([_ for _ in obj.ingredients if _ == Recipe.TOMATO])
         num_onions = len([_ for _ in obj.ingredients if _ == Recipe.ONION])
         if num_tomatoes == 0 and player_idx == 1:
