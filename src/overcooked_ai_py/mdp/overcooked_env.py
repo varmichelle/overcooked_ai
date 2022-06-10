@@ -735,6 +735,9 @@ class Overcooked(gym.Env):
         print()
         print()
 
+    def get_render(self, mode="human", close=False):
+        return str(self.base_env)
+
 if hasattr(__loader__, 'name'):
     module_path = __loader__.name
 elif hasattr(__loader__, 'fullname'):
