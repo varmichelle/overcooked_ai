@@ -725,14 +725,14 @@ class OvercookedState(object):
         return obj
 
     @classmethod
-    def from_players_pos_and_or(cls, players_pos_and_or, bonus_orders=[], all_orders=[]):
+    def from_players_pos_and_or(cls, players_pos_and_or, bonus_orders=[], all_orders=[], timestep=0):
         """
         Make a dummy OvercookedState with no objects based on the passed in player
         positions and orientations and order list
         """
         return cls(
             [PlayerState(*player_pos_and_or) for player_pos_and_or in players_pos_and_or], 
-            objects={}, bonus_orders=bonus_orders, all_orders=all_orders)
+            objects={}, bonus_orders=bonus_orders, all_orders=all_orders, timestep=timestep)
 
     @classmethod
     def from_player_positions(cls, player_positions, bonus_orders=[], all_orders=[]):
@@ -1035,15 +1035,26 @@ class OvercookedGridworld(object):
         # print('done')
         return start_state
 
-    def get_random_start_state_fn(self, random_start_pos=False, rnd_obj_prob_thresh=0.0):
+    def get_random_start_state_fn(self, random_start_pos=False, rnd_obj_prob_thresh=0.0, mini4=False):
         def start_state_fn():
             if random_start_pos:
-                valid_positions = self.get_valid_joint_player_positions()
+                if mini4:
+                    valid_positions = self.get_valid_joint_player_positions_sep_per_player_mini4()
+                else:
+                    valid_positions = self.get_valid_joint_player_positions()
                 start_pos = valid_positions[np.random.choice(len(valid_positions))]
             else:
                 start_pos = self.start_player_positions
 
             start_state = OvercookedState.from_player_positions(start_pos, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders)
+            if mini4:
+                # raise Exception('start_pos', start_pos)
+                dir_0 = Direction.ALL_DIRECTIONS[np.random.choice(len(Direction.ALL_DIRECTIONS))]
+                dir_1 = Direction.ALL_DIRECTIONS[np.random.choice(len(Direction.ALL_DIRECTIONS))]
+                start_pos_and_or = [(start_pos[0], dir_0), (start_pos[1], dir_1)]
+                # raise Exception(dir_0, dir_1, 'start_pos_and_or', start_pos_and_or)
+                t = np.random.randint(low=0, high=98)
+                start_state = OvercookedState.from_players_pos_and_or(start_pos_and_or, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders, timestep=t)
 
             if rnd_obj_prob_thresh == 0:
                 return start_state
@@ -1054,21 +1065,45 @@ class OvercookedGridworld(object):
             pots = self.get_pot_states(start_state)["empty"]
             for pot_loc in pots:
                 p = np.random.rand()
+                
                 if p < rnd_obj_prob_thresh:
-                    n = int(np.random.randint(low=1, high=4))
-                    m = int(np.random.randint(low=0, high=4-n))
+
+                    # onion pot
+                    if mini4 and pot_loc == (2,2):
+                        n = int(np.random.randint(low=1, high=4))
+                        m = 0
+                
+                    # tomato pot
+                    elif mini4 and pot_loc == (2,4):
+                        m = int(np.random.randint(low=1, high=4))
+                        n = 0
+
+                    # mixed pot or otherwise
+                    else:
+                        if p < rnd_obj_prob_thresh/2:
+                            n = int(np.random.randint(low=1, high=4))
+                            m = int(np.random.randint(low=0, high=4-n))
+                        else:
+                            m = int(np.random.randint(low=1, high=4))
+                            n = int(np.random.randint(low=0, high=4-m))
+                
                     q = np.random.rand()
                     cooking_tick = 0 if q < rnd_obj_prob_thresh else -1
                     start_state.objects[pot_loc] = SoupState.get_soup(pot_loc, num_onions=n, num_tomatoes=m, cooking_tick=cooking_tick)
 
             # For each player, add a random object with prob rnd_obj_prob_thresh
-            for player in start_state.players:
+            for i, player in enumerate(start_state.players):
                 p = np.random.rand()
                 if p < rnd_obj_prob_thresh:
                     # Different objects have different probabilities
-                    obj = np.random.choice(["dish", "onion", "soup"], p=[0.2, 0.6, 0.2])
-                    n = int(np.random.randint(low=1, high=4))
-                    m = int(np.random.randint(low=0, high=4-n))
+                    if i == 0:
+                        obj = np.random.choice(["dish", "onion", "soup"], p=[0.2, 0.6, 0.2])
+                        n = int(np.random.randint(low=1, high=4))
+                        m = int(np.random.randint(low=0, high=4-n))
+                    else:
+                        obj = np.random.choice(["dish", "tomato", "soup"], p=[0.2, 0.6, 0.2])
+                        m = int(np.random.randint(low=1, high=4))
+                        n = int(np.random.randint(low=0, high=4-m))
                     if obj == "soup":
                         player.set_object(
                             SoupState.get_soup(player.position, num_onions=n, num_tomatoes=m, finished=True)
@@ -1077,6 +1112,91 @@ class OvercookedGridworld(object):
                         player.set_object(ObjectState(obj, player.position))
             return start_state
         return start_state_fn
+
+    def get_state_from_data(self, data):
+        start_pos_and_or = [(data['pos0'], data['dir0']), (data['pos1'], data['dir1'])]
+        t = data['t']
+        start_state = OvercookedState.from_players_pos_and_or(start_pos_and_or, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders, timestep=t)
+
+        pots = self.get_pot_states(start_state)["empty"]
+        for i, pot_loc in enumerate(pots):
+            n = data[f'pot{i}_n']
+            m = data[f'pot{i}_m']
+            cooking_tick = data[f'pot{i}_cooking_tick']
+            start_state.objects[pot_loc] = SoupState.get_soup(pot_loc, num_onions=n, num_tomatoes=m, cooking_tick=cooking_tick)
+
+        for i, player in enumerate(start_state.players):
+            n, m, d = data[f'item{i}']
+            if n > 0 and m > 0: 
+                player.set_object(
+                    SoupState.get_soup(player.position, num_onions=n, num_tomatoes=m, finished=True)
+                )
+            else:
+                if d > 0:
+                    obj = "dish"
+                elif n > 0:
+                    obj = "onion"
+                elif m > 0:
+                    obj = "tomato"
+                else:
+                    obj = None
+                
+                if obj is not None:
+                    player.set_object(ObjectState(obj, player.position))
+        return start_state
+
+    def get_state_data(self, state):
+        pot_states = []
+        for pot_loc in self.get_pot_locations():
+            if state.has_object(pot_loc):
+                soup = state.get_object(pot_loc)
+                n = len([i for i in soup._ingredients if i.name == 'onion'])
+                m = len([i for i in soup._ingredients if i.name == 'tomato'])
+                c = soup._cooking_tick
+            else:
+                n, m, c = 0, 0, -1
+            pot_states.append((n, m, c))
+
+        player_items = []
+        for player in state.players:
+            player_object = player.held_object
+            if player_object:
+                if player_object.name[0] == "s":
+                    # this is a soup
+                    n = len([i for i in player_object._ingredients if i.name == 'onion'])
+                    m = len([i for i in player_object._ingredients if i.name == 'tomato'])
+                    d = 0
+                elif player_object.name == 'onion':
+                    n, m, d = 1, 0, 0
+                elif player_object.name == 'tomato':
+                    n, m, d = 0, 1, 0
+                elif player_object.name == 'dish':
+                    n, m, d = 0, 0, 1
+                else:
+                    raise Exception(f'wat is this object {player_object.name}')
+            else:
+                n, m, d = 0, 0, 0
+            player_items.append((n, m, d))
+
+        data = {
+            'pos0': state.players[0].position,
+            'pos1': state.players[1].position,
+            'dir0': state.players[0].orientation,
+            'dir1': state.players[1].orientation,
+            't': state.timestep,
+            'pot0_n': pot_states[0][0],
+            'pot0_m': pot_states[0][1],
+            'pot0_cooking_tick': pot_states[0][2],
+            'pot1_n': pot_states[1][0],
+            'pot1_m': pot_states[1][1],
+            'pot1_cooking_tick': pot_states[1][2],
+            'pot2_n': pot_states[2][0],
+            'pot2_m': pot_states[2][1],
+            'pot2_cooking_tick': pot_states[2][2],
+            'item0': player_items[0],
+            'item1': player_items[1]
+        }
+        return data
 
     def is_terminal(self, state):
         # There is a finite horizon, handled by the environment.
@@ -1367,6 +1487,14 @@ class OvercookedGridworld(object):
         valid_joint_positions = [j_pos for j_pos in all_joint_positions if not self.is_joint_position_collision(j_pos)]
         return valid_joint_positions
 
+    def get_valid_joint_player_positions_sep_per_player_mini4(self):
+        """Returns all valid tuples of the form (p0_pos, p1_pos, p2_pos, ...)"""
+        valid_positions_p0 = [(1,1),(1,2)]
+        valid_positions_p1 = [(1,4),(1,5)]
+        all_joint_positions = list(itertools.product(valid_positions_p0, valid_positions_p1))
+        valid_joint_positions = [j_pos for j_pos in all_joint_positions if not self.is_joint_position_collision(j_pos)]
+        return valid_joint_positions
+
     def get_valid_player_positions_and_orientations(self):
         valid_states = []
         for pos in self.get_valid_player_positions():
@@ -1488,12 +1616,12 @@ class OvercookedGridworld(object):
         obj = state.get_object(pos)
         assert obj.name == 'soup', 'Object in pot was not soup'
         # THE RULE
-        num_tomatoes = len([_ for _ in obj.ingredients if _ == Recipe.TOMATO])
-        num_onions = len([_ for _ in obj.ingredients if _ == Recipe.ONION])
-        if num_tomatoes == 0 and player_idx == 1:
-            return False
-        if num_onions == 0 and player_idx == 0:
-            return False
+        # num_tomatoes = len([_ for _ in obj.ingredients if _ == Recipe.TOMATO])
+        # num_onions = len([_ for _ in obj.ingredients if _ == Recipe.ONION])
+        # if num_tomatoes == 0 and player_idx == 1:
+        #     return False
+        # if num_onions == 0 and player_idx == 0:
+        #     return False
         return obj.is_ready
 
     def soup_to_be_cooked_at_location(self, state, pos):
@@ -1900,6 +2028,7 @@ class OvercookedGridworld(object):
         variable_map_features = ["onions_in_pot", "tomatoes_in_pot", "onions_in_soup", "tomatoes_in_soup",
                                  "soup_cook_time_remaining", "soup_done", "dishes", "onions", "tomatoes"]
         urgency_features = ["urgency"]
+        # print('overcooked_state', type(overcooked_state))
         all_objects = overcooked_state.all_objects_list
 
         def make_layer(position, value):

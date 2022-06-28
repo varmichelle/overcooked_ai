@@ -9,11 +9,11 @@ from ..planning.planners import MediumLevelActionManager, MotionPlanner, NO_COUN
 import envs.registration as register
 
 DEFAULT_ENV_PARAMS = {
-    "horizon": 100
+    "horizon": 105
 }
 
 MAX_HORIZON = 1e10
-SMALL_HORIZON = 100
+SMALL_HORIZON = 105
 
 class OvercookedEnv(object):
     """
@@ -263,6 +263,13 @@ class OvercookedEnv(object):
         """
         return self.mdp.featurize_state(state, self.mlam, num_pots=2)
 
+    def set_state(self, data):
+        self.state = self.mdp.get_state_from_data(data)
+
+    def get_state_data(self):
+        return self.mdp.get_state_data(self.state)
+
+
     def reset(self, regen_mdp=True, outside_info={}):
         """
         Resets the environment. Does NOT reset the agent.
@@ -275,28 +282,25 @@ class OvercookedEnv(object):
                                  you need to have a "initial_info" dictionary with the same keys in the "env_params"
         """
         try:
-            # print('reset in baseenv (overcookedenv)')
             if regen_mdp:
-                # print('regen_mdp')
-                # print('mdp_generator_fn', self.mdp_generator_fn)
                 try:
                     self.mdp = self.mdp_generator_fn(outside_info)
                 except:
                     raise Exception('error generating mdp')
-                # print('self.mdp', self.mdp)
+                
                 self._mlam = None
                 self._mp = None
+            
             if self.start_state_fn is None:
-                # print('L257')
                 try:
                     self.state = self.mdp.get_standard_start_state()
+                    # self.state = self.mdp.get_random_start_state_fn(rnd_obj_prob_thresh=0.5)()
                 except:
                     raise Exception('error getting starting state')
-                # print('self.state L260', self.state)
             else:
-                # print('L261')
+                # TEMPORARY MEASURE FOR EVALUATING ON STANDARD START STATE
+                # self.state = self.mdp.get_standard_start_state()
                 self.state = self.start_state_fn()
-                # print('self.state', self.state)
 
             events_dict = { k : [ [] for _ in range(self.mdp.num_players) ] for k in EVENT_TYPES }
             rewards_dict = {
@@ -650,7 +654,7 @@ class Overcooked(gym.Env):
         obs = {"both_agent_obs": both_agents_ob,
                 # "overcooked_state": next_state,
                 "other_agent_env_idx": 1 - self.agent_idx,
-                "time": next_state.timestep}
+                "time": (SMALL_HORIZON-next_state.timestep)/SMALL_HORIZON}
         
         reward_p0 = sparse_reward + env_info['shaped_r_by_agent'][0]
         reward_p1 = sparse_reward + env_info['shaped_r_by_agent'][1]
@@ -718,6 +722,8 @@ class Overcooked(gym.Env):
         self.mdp = self.base_env.mdp
         # self.agent_idx = np.random.choice([0, 1])
         self.agent_idx = 0
+        # print('TYPE self.base_env.state', type(self.base_env.state))
+        # print('self.base_env.state', self.base_env.state)
         ob_p0, ob_p1 = self.featurize_fn(self.mdp, self.base_env.state)
 
         if self.agent_idx == 0:
@@ -725,18 +731,36 @@ class Overcooked(gym.Env):
         else:
             both_agents_ob = (ob_p1, ob_p0)
         return {"both_agent_obs": both_agents_ob, 
-                "overcooked_state": self.base_env.state, 
+                # "overcooked_state": self.base_env.state, 
                 "other_agent_env_idx": 1 - self.agent_idx,
-                "time": 0}
+                "time": 1}
 
     def render(self, mode="human", close=False):
         print(self.base_env)
-        print()
-        print()
+        # print()
+        # print()
         print()
 
     def get_render(self, mode="human", close=False):
         return str(self.base_env)
+
+    def set_state(self, data):
+        self.base_env.set_state(data)
+        self.mdp = self.base_env.mdp
+        self.agent_idx = 0
+        ob_p0, ob_p1 = self.featurize_fn(self.mdp, self.base_env.state)
+
+        if self.agent_idx == 0:
+            both_agents_ob = (ob_p0, ob_p1)
+        else:
+            both_agents_ob = (ob_p1, ob_p0)
+        return {"both_agent_obs": both_agents_ob, 
+                # "overcooked_state": self.base_env.state, 
+                "other_agent_env_idx": 1 - self.agent_idx,
+                "time": (SMALL_HORIZON-data['t'])/SMALL_HORIZON}
+
+    def get_state_data(self):
+        return self.base_env.get_state_data()
 
 if hasattr(__loader__, 'name'):
     module_path = __loader__.name
