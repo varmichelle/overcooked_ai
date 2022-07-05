@@ -1127,7 +1127,7 @@ class OvercookedGridworld(object):
 
         for i, player in enumerate(start_state.players):
             n, m, d = data[f'item{i}']
-            if n > 0 and m > 0: 
+            if (n > 0 or m > 0) and d > 0: 
                 player.set_object(
                     SoupState.get_soup(player.position, num_onions=n, num_tomatoes=m, finished=True)
                 )

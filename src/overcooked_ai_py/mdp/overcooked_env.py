@@ -299,8 +299,8 @@ class OvercookedEnv(object):
                     raise Exception('error getting starting state')
             else:
                 # TEMPORARY MEASURE FOR EVALUATING ON STANDARD START STATE
-                # self.state = self.mdp.get_standard_start_state()
-                self.state = self.start_state_fn()
+                self.state = self.mdp.get_standard_start_state()
+                # self.state = self.start_state_fn()
 
             events_dict = { k : [ [] for _ in range(self.mdp.num_players) ] for k in EVENT_TYPES }
             rewards_dict = {
@@ -616,7 +616,8 @@ class Overcooked(gym.Env):
         obs_shape = self.featurize_fn(dummy_mdp, dummy_state)[0].shape
         high = np.ones(obs_shape) * float("inf")
         self.image_obs_space = gym.spaces.Box(high * 0, high, dtype=np.float32)
-        self.time_obs_space = gym.spaces.Discrete(SMALL_HORIZON+1)
+        # self.time_obs_space = gym.spaces.Discrete(SMALL_HORIZON+1)
+        self.time_obs_space = gym.spaces.Box(0, 1, shape=(1,), dtype=np.float32)
         self.observation_space = gym.spaces.Dict(
             {'obs': self.image_obs_space,
             'time': self.time_obs_space})
@@ -697,8 +698,7 @@ class Overcooked(gym.Env):
         obs = {"both_agent_obs": both_agents_ob,
                 # "overcooked_state": next_state,
                 "other_agent_env_idx": 1 - self.agent_idx,
-                "policy_agent_idx": self.agent_idx,
-                "time": next_state.timestep}
+                "time": (SMALL_HORIZON-next_state.timestep)/SMALL_HORIZON}
 
         reward_p0 = sparse_reward + env_info['shaped_r_by_agent'][0]
         reward_p1 = sparse_reward + env_info['shaped_r_by_agent'][1]
@@ -733,7 +733,7 @@ class Overcooked(gym.Env):
         return {"both_agent_obs": both_agents_ob, 
                 # "overcooked_state": self.base_env.state, 
                 "other_agent_env_idx": 1 - self.agent_idx,
-                "time": 1}
+                "time": (SMALL_HORIZON-self.base_env.state.timestep)/SMALL_HORIZON}
 
     def render(self, mode="human", close=False):
         print(self.base_env)
