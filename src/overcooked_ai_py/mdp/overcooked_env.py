@@ -299,8 +299,8 @@ class OvercookedEnv(object):
                     raise Exception('error getting starting state')
             else:
                 # TEMPORARY MEASURE FOR EVALUATING ON STANDARD START STATE
-                self.state = self.mdp.get_standard_start_state()
-                # self.state = self.start_state_fn()
+                # self.state = self.mdp.get_standard_start_state()
+                self.state = self.start_state_fn()
 
             events_dict = { k : [ [] for _ in range(self.mdp.num_players) ] for k in EVENT_TYPES }
             rewards_dict = {
