@@ -747,17 +747,18 @@ class Overcooked(gym.Env):
     def set_state(self, data):
         self.base_env.set_state(data)
         self.mdp = self.base_env.mdp
-        self.agent_idx = 0
-        ob_p0, ob_p1 = self.featurize_fn(self.mdp, self.base_env.state)
+        # self.agent_idx = 0
+        # ob_p0, ob_p1 = self.featurize_fn(self.mdp, self.base_env.state)
 
-        if self.agent_idx == 0:
-            both_agents_ob = (ob_p0, ob_p1)
-        else:
-            both_agents_ob = (ob_p1, ob_p0)
-        return {"both_agent_obs": both_agents_ob, 
-                # "overcooked_state": self.base_env.state, 
-                "other_agent_env_idx": 1 - self.agent_idx,
-                "time": (SMALL_HORIZON-data['t'])/SMALL_HORIZON}
+        # if self.agent_idx == 0:
+        #     both_agents_ob = (ob_p0, ob_p1)
+        # else:
+        #     both_agents_ob = (ob_p1, ob_p0)
+        # return {"both_agent_obs": both_agents_ob, 
+        #         # "overcooked_state": self.base_env.state, 
+        #         "other_agent_env_idx": 1 - self.agent_idx,
+        #         "time": (SMALL_HORIZON-data['t'])/SMALL_HORIZON}
+        return
 
     def get_state_data(self):
         return self.base_env.get_state_data()
