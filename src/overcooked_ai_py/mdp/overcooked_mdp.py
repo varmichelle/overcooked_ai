@@ -1489,8 +1489,14 @@ class OvercookedGridworld(object):
 
     def get_valid_joint_player_positions_sep_per_player_mini4(self):
         """Returns all valid tuples of the form (p0_pos, p1_pos, p2_pos, ...)"""
+        # FOR MINI 1
         valid_positions_p0 = [(1,1),(1,2)]
         valid_positions_p1 = [(1,4),(1,5)]
+
+        # # FOR MINI 2
+        # valid_positions_p0 = [(1,1),(1,2),(2,2)]
+        # valid_positions_p1 = [(1,4),(2,4),(2,5)]
+
         all_joint_positions = list(itertools.product(valid_positions_p0, valid_positions_p1))
         valid_joint_positions = [j_pos for j_pos in all_joint_positions if not self.is_joint_position_collision(j_pos)]
         return valid_joint_positions

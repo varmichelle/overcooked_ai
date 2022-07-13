@@ -14,6 +14,7 @@ DEFAULT_ENV_PARAMS = {
 
 MAX_HORIZON = 1e10
 SMALL_HORIZON = 105
+K_STEPS = 1
 
 class OvercookedEnv(object):
     """
@@ -605,6 +606,7 @@ class Overcooked(gym.Env):
         self.base_env = base_env
         self.featurize_fn = featurize_fn
         self.observation_space = self._setup_observation_space()
+        self.adversarial_observation_space = self._setup_adversarial_observation_space()
         self.single_agent_action_space = gym.spaces.Discrete(len(Action.ALL_ACTIONS))
         self.action_space = gym.spaces.MultiDiscrete([len(Action.ALL_ACTIONS), len(Action.ALL_ACTIONS)])  # multi-agent
         self.reset()
@@ -622,6 +624,14 @@ class Overcooked(gym.Env):
             {'obs': self.image_obs_space,
             'time': self.time_obs_space})
         return self.observation_space
+
+    def _setup_adversarial_observation_space(self):
+        self.k_obs_space = gym.spaces.Discrete(K_STEPS+1)
+        self.adversarial_observation_space = gym.spaces.Dict(
+            {'obs': self.image_obs_space,
+            'time': self.time_obs_space,
+            'k_remaining': self.k_obs_space})
+        return self.adversarial_observation_space
 
     def step(self, action):
         """
