@@ -1035,11 +1035,13 @@ class OvercookedGridworld(object):
         # print('done')
         return start_state
 
-    def get_random_start_state_fn(self, random_start_pos=False, rnd_obj_prob_thresh=0.0, mini4=False):
+    def get_random_start_state_fn(self, random_start_pos=False, rnd_obj_prob_thresh=0.0, layout=None):
         def start_state_fn():
             if random_start_pos:
-                if mini4:
-                    valid_positions = self.get_valid_joint_player_positions_sep_per_player_mini4()
+                if layout == 'power_wrong_ingredient_mini1':
+                    valid_positions = self.get_valid_joint_player_positions_sep_per_player_mini1()
+                elif layout == 'power_wrong_ingredient_mini2':
+                    valid_positions = self.get_valid_joint_player_positions_sep_per_player_mini2()
                 else:
                     valid_positions = self.get_valid_joint_player_positions()
                 start_pos = valid_positions[np.random.choice(len(valid_positions))]
@@ -1047,13 +1049,13 @@ class OvercookedGridworld(object):
                 start_pos = self.start_player_positions
 
             start_state = OvercookedState.from_player_positions(start_pos, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders)
-            if mini4:
+            if layout == 'power_wrong_ingredient_mini1' or layout == 'power_wrong_ingredient_mini2':
                 # raise Exception('start_pos', start_pos)
                 dir_0 = Direction.ALL_DIRECTIONS[np.random.choice(len(Direction.ALL_DIRECTIONS))]
                 dir_1 = Direction.ALL_DIRECTIONS[np.random.choice(len(Direction.ALL_DIRECTIONS))]
                 start_pos_and_or = [(start_pos[0], dir_0), (start_pos[1], dir_1)]
                 # raise Exception(dir_0, dir_1, 'start_pos_and_or', start_pos_and_or)
-                t = np.random.randint(low=0, high=98)
+                t = np.random.randint(low=0, high=100)
                 start_state = OvercookedState.from_players_pos_and_or(start_pos_and_or, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders, timestep=t)
 
             if rnd_obj_prob_thresh == 0:
@@ -1068,13 +1070,16 @@ class OvercookedGridworld(object):
                 
                 if p < rnd_obj_prob_thresh:
 
+                    onion_pot_loc = (2,2) if layout=='power_wrong_ingredient_mini1' else (3,2)
+                    tomato_pot_loc = (2,4) if layout=='power_wrong_ingredient_mini1' else (0,4) 
+
                     # onion pot
-                    if mini4 and pot_loc == (2,2):
+                    if (layout == 'power_wrong_ingredient_mini1' or layout == 'power_wrong_ingredient_mini2') and pot_loc == onion_pot_loc:
                         n = int(np.random.randint(low=1, high=4))
                         m = 0
                 
                     # tomato pot
-                    elif mini4 and pot_loc == (2,4):
+                    elif (layout == 'power_wrong_ingredient_mini1' or layout == 'power_wrong_ingredient_mini2') and pot_loc == tomato_pot_loc:
                         m = int(np.random.randint(low=1, high=4))
                         n = 0
 
@@ -1487,15 +1492,21 @@ class OvercookedGridworld(object):
         valid_joint_positions = [j_pos for j_pos in all_joint_positions if not self.is_joint_position_collision(j_pos)]
         return valid_joint_positions
 
-    def get_valid_joint_player_positions_sep_per_player_mini4(self):
+    def get_valid_joint_player_positions_sep_per_player_mini1(self):
         """Returns all valid tuples of the form (p0_pos, p1_pos, p2_pos, ...)"""
         # FOR MINI 1
         valid_positions_p0 = [(1,1),(1,2)]
         valid_positions_p1 = [(1,4),(1,5)]
 
-        # # FOR MINI 2
-        # valid_positions_p0 = [(1,1),(1,2),(2,2)]
-        # valid_positions_p1 = [(1,4),(2,4),(2,5)]
+        all_joint_positions = list(itertools.product(valid_positions_p0, valid_positions_p1))
+        valid_joint_positions = [j_pos for j_pos in all_joint_positions if not self.is_joint_position_collision(j_pos)]
+        return valid_joint_positions
+
+    def get_valid_joint_player_positions_sep_per_player_mini2(self):
+        """Returns all valid tuples of the form (p0_pos, p1_pos, p2_pos, ...)"""
+        # FOR MINI 2
+        valid_positions_p0 = [(1,1),(1,2),(2,2)]
+        valid_positions_p1 = [(1,4),(2,4),(2,5)]
 
         all_joint_positions = list(itertools.product(valid_positions_p0, valid_positions_p1))
         valid_joint_positions = [j_pos for j_pos in all_joint_positions if not self.is_joint_position_collision(j_pos)]

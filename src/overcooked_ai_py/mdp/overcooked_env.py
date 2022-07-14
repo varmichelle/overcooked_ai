@@ -295,7 +295,6 @@ class OvercookedEnv(object):
             if self.start_state_fn is None:
                 try:
                     self.state = self.mdp.get_standard_start_state()
-                    # self.state = self.mdp.get_random_start_state_fn(rnd_obj_prob_thresh=0.5)()
                 except:
                     raise Exception('error getting starting state')
             else:
