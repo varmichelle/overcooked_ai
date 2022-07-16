@@ -1119,6 +1119,7 @@ class OvercookedGridworld(object):
         return start_state_fn
 
     def get_state_from_data(self, data):
+        # print('data', data)
         start_pos_and_or = [(data['pos0'], data['dir0']), (data['pos1'], data['dir1'])]
         t = data['t']
         start_state = OvercookedState.from_players_pos_and_or(start_pos_and_or, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders, timestep=t)
