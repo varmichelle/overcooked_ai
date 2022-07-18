@@ -1199,6 +1199,9 @@ class OvercookedGridworld(object):
             'pot2_n': pot_states[2][0],
             'pot2_m': pot_states[2][1],
             'pot2_cooking_tick': pot_states[2][2],
+            'pot3_n': pot_states[3][0] if len(pot_states) > 3 else None,
+            'pot3_m': pot_states[3][1] if len(pot_states) > 3 else None,
+            'pot3_cooking_tick': pot_states[3][2] if len(pot_states) > 3 else None,
             'item0': player_items[0],
             'item1': player_items[1]
         }
