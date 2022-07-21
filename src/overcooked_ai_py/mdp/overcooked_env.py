@@ -7,13 +7,14 @@ from ..mdp.overcooked_mdp import OvercookedGridworld, EVENT_TYPES
 from ..mdp.overcooked_trajectory import TIMESTEP_TRAJ_KEYS, EPISODE_TRAJ_KEYS, DEFAULT_TRAJ_KEYS
 from ..planning.planners import MediumLevelActionManager, MotionPlanner, NO_COUNTERS_PARAMS
 import envs.registration as register
+from envs.overcooked_ai.src.overcooked_ai_py.mdp.actions import Action, Direction
 
 DEFAULT_ENV_PARAMS = {
-    "horizon": 105
+    "horizon": 400
 }
 
 MAX_HORIZON = 1e10
-SMALL_HORIZON = 105
+SMALL_HORIZON = 400
 K_STEPS = 1
 
 class OvercookedEnv(object):
@@ -727,7 +728,30 @@ class Overcooked(gym.Env):
         NOTE: a nicer way to do this would be to just randomize starting positions, and not
         have to deal with randomizing indices.
         """
+        # print("RESET")
         self.base_env.reset()
+        # data = {
+        #     'pos0': (1,1),
+        #     'pos1': (1,4),
+        #     'dir0': Direction.NORTH,
+        #     'dir1': Direction.NORTH,
+        #     't': 90,
+        #     'pot0_n': 0,
+        #     'pot0_m': 0,
+        #     'pot0_cooking_tick': -1,
+        #     'pot1_n': 2,
+        #     'pot1_m': 0,
+        #     'pot1_cooking_tick': -1,
+        #     'pot2_n': 0,
+        #     'pot2_m': 0,
+        #     'pot2_cooking_tick': -1,
+        #     'pot3_n': 0,
+        #     'pot3_m': 0,
+        #     'pot3_cooking_tick': -1,
+        #     'item0': (0,0,0),
+        #     'item1': (0,1,0)
+        # }
+        # self.set_state(data)
         self.mdp = self.base_env.mdp
         # self.agent_idx = np.random.choice([0, 1])
         self.agent_idx = 0
