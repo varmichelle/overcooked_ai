@@ -1055,7 +1055,7 @@ class OvercookedGridworld(object):
                 dir_1 = Direction.ALL_DIRECTIONS[np.random.choice(len(Direction.ALL_DIRECTIONS))]
                 start_pos_and_or = [(start_pos[0], dir_0), (start_pos[1], dir_1)]
                 # raise Exception(dir_0, dir_1, 'start_pos_and_or', start_pos_and_or)
-                t = np.random.randint(low=0, high=395)
+                t = np.random.randint(low=0, high=100)
                 start_state = OvercookedState.from_players_pos_and_or(start_pos_and_or, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders, timestep=t)
 
             if rnd_obj_prob_thresh == 0:
