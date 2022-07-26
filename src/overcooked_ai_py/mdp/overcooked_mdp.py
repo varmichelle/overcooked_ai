@@ -1055,7 +1055,7 @@ class OvercookedGridworld(object):
                 dir_1 = Direction.ALL_DIRECTIONS[np.random.choice(len(Direction.ALL_DIRECTIONS))]
                 start_pos_and_or = [(start_pos[0], dir_0), (start_pos[1], dir_1)]
                 # raise Exception(dir_0, dir_1, 'start_pos_and_or', start_pos_and_or)
-                t = np.random.randint(low=0, high=395)
+                t = np.random.randint(low=0, high=100)
                 start_state = OvercookedState.from_players_pos_and_or(start_pos_and_or, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders, timestep=t)
 
             if rnd_obj_prob_thresh == 0:
@@ -1065,10 +1065,30 @@ class OvercookedGridworld(object):
             # For each pot, add a random amount of onions and tomatoes with prob rnd_obj_prob_thresh
             # Begin the soup cooking with probability rnd_obj_prob_thresh
             pots = self.get_pot_states(start_state)["empty"]
+
+            if layout=='power_wrong_ingredient_mini2':
+                onion_agent_pots = [(3,2),(1,3)]
+                tomato_agent_pots = [(0,4),(2,3)]
+                pot_p = np.random.rand()
+                if pot_p < 0.2:
+                    onion_agent_pots = []
+                elif pot_p < 0.55:
+                    onion_agent_pots = onion_agent_pots[0]
+                elif pot_p < 0.9:
+                    onion_agent_pots = onion_agent_pots[1]
+
+                pot_p = np.random.rand()
+                if pot_p < 0.2:
+                    tomato_agent_pots = []
+                elif pot_p < 0.55:
+                    tomato_agent_pots = tomato_agent_pots[0]
+                elif pot_p < 0.9:
+                    tomato_agent_pots = tomato_agent_pots[1]
+
             for pot_loc in pots:
                 p = np.random.rand()
-                
-                if p < rnd_obj_prob_thresh:
+                populate_pot = (layout=='power_wrong_ingredient_mini2' and (pot_loc in onion_agent_pots or pot_loc in tomato_agent_pots)) or (layout=='power_wrong_ingredient_mini1' and p < rnd_obj_prob_thresh)
+                if populate_pot:
 
                     onion_pot_loc = (2,2) if layout=='power_wrong_ingredient_mini1' else (3,2)
                     tomato_pot_loc = (2,4) if layout=='power_wrong_ingredient_mini1' else (0,4) 
@@ -1087,13 +1107,22 @@ class OvercookedGridworld(object):
                     else:
                         if p < rnd_obj_prob_thresh/2:
                             n = int(np.random.randint(low=1, high=4))
-                            m = int(np.random.randint(low=0, high=4-n))
+                            if np.random.rand() < 0.25:
+                                m = int(np.random.randint(low=0, high=4-n))
+                            else:
+                                m = 0
                         else:
                             m = int(np.random.randint(low=1, high=4))
-                            n = int(np.random.randint(low=0, high=4-m))
+                            if np.random.rand() < 0.25:
+                                n = int(np.random.randint(low=0, high=4-m))
+                            else:
+                                n = 0
                 
                     q = np.random.rand()
-                    cooking_tick = 0 if q < rnd_obj_prob_thresh else -1
+                    if n+m == 3:
+                        cooking_tick = 0 if q < rnd_obj_prob_thresh else -1
+                    else:
+                        cooking_tick = 0 if q < 0.1 else -1
                     start_state.objects[pot_loc] = SoupState.get_soup(pot_loc, num_onions=n, num_tomatoes=m, cooking_tick=cooking_tick)
 
             # For each player, add a random object with prob rnd_obj_prob_thresh
@@ -1102,13 +1131,19 @@ class OvercookedGridworld(object):
                 if p < rnd_obj_prob_thresh:
                     # Different objects have different probabilities
                     if i == 0:
-                        obj = np.random.choice(["dish", "onion", "soup"], p=[0.2, 0.6, 0.2])
-                        n = int(np.random.randint(low=1, high=4))
-                        m = int(np.random.randint(low=0, high=4-n))
+                        obj = np.random.choice(["dish", "onion", "soup"], p=[0.1, 0.8, 0.1])
+                        n = int(np.random.choice(a=[1,2,3],p=[0.1,0.1,0.8]))
+                        if np.random.rand() < rnd_obj_prob_thresh:
+                            m = int(np.random.randint(low=0, high=4-n))
+                        else:
+                            m = 0 
                     else:
-                        obj = np.random.choice(["dish", "tomato", "soup"], p=[0.2, 0.6, 0.2])
-                        m = int(np.random.randint(low=1, high=4))
-                        n = int(np.random.randint(low=0, high=4-m))
+                        obj = np.random.choice(["dish", "tomato", "soup"], p=[0.1, 0.8, 0.1])
+                        m = int(np.random.choice(a=[1,2,3],p=[0.1,0.1,0.8]))
+                        if np.random.rand() < rnd_obj_prob_thresh:
+                            n = int(np.random.randint(low=0, high=4-m))
+                        else:
+                            n = 0
                     if obj == "soup":
                         player.set_object(
                             SoupState.get_soup(player.position, num_onions=n, num_tomatoes=m, finished=True)
@@ -2040,7 +2075,7 @@ class OvercookedGridworld(object):
         return np.array(list(self.shape) + [26])
 
 
-    def lossless_state_encoding(self, overcooked_state, horizon=400, debug=False):
+    def lossless_state_encoding(self, overcooked_state, horizon=105, debug=False):
         """Featurizes a OvercookedState object into a stack of boolean masks that are easily readable by a CNN"""
         assert self.num_players == 2, "Functionality has to be added to support encondings for > 2 players"
         assert type(debug) is bool

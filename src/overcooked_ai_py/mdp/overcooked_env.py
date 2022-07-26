@@ -10,11 +10,11 @@ import envs.registration as register
 from envs.overcooked_ai.src.overcooked_ai_py.mdp.actions import Action, Direction
 
 DEFAULT_ENV_PARAMS = {
-    "horizon": 400
+    "horizon": 105
 }
 
 MAX_HORIZON = 1e10
-SMALL_HORIZON = 400
+SMALL_HORIZON = 105
 K_STEPS = 1
 
 class OvercookedEnv(object):
