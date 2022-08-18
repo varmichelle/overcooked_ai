@@ -1038,7 +1038,7 @@ class OvercookedGridworld(object):
     def get_random_start_state_fn(self, random_start_pos=False, rnd_obj_prob_thresh=0.0, layout=None):
         def start_state_fn():
             if random_start_pos:
-                if layout == 'power_wrong_ingredient_mini1':
+                if 'power_wrong_ingredient_mini1' in layout:
                     valid_positions = self.get_valid_joint_player_positions_sep_per_player_mini1()
                 elif layout == 'power_wrong_ingredient_mini2':
                     valid_positions = self.get_valid_joint_player_positions_sep_per_player_mini2()
@@ -1049,7 +1049,7 @@ class OvercookedGridworld(object):
                 start_pos = self.start_player_positions
 
             start_state = OvercookedState.from_player_positions(start_pos, bonus_orders=self.start_bonus_orders, all_orders=self.start_all_orders)
-            if layout == 'power_wrong_ingredient_mini1' or layout == 'power_wrong_ingredient_mini2':
+            if 'power_wrong_ingredient_mini1' in layout or layout == 'power_wrong_ingredient_mini2':
                 # raise Exception('start_pos', start_pos)
                 dir_0 = Direction.ALL_DIRECTIONS[np.random.choice(len(Direction.ALL_DIRECTIONS))]
                 dir_1 = Direction.ALL_DIRECTIONS[np.random.choice(len(Direction.ALL_DIRECTIONS))]
@@ -1087,19 +1087,19 @@ class OvercookedGridworld(object):
 
             for pot_loc in pots:
                 p = np.random.rand()
-                populate_pot = (layout=='power_wrong_ingredient_mini2' and (pot_loc in onion_agent_pots or pot_loc in tomato_agent_pots)) or (layout=='power_wrong_ingredient_mini1' and p < rnd_obj_prob_thresh)
+                populate_pot = (layout=='power_wrong_ingredient_mini2' and (pot_loc in onion_agent_pots or pot_loc in tomato_agent_pots)) or ('power_wrong_ingredient_mini1' in layout and p < rnd_obj_prob_thresh)
                 if populate_pot:
 
-                    onion_pot_loc = (2,2) if layout=='power_wrong_ingredient_mini1' else (3,2)
-                    tomato_pot_loc = (2,4) if layout=='power_wrong_ingredient_mini1' else (0,4) 
+                    onion_pot_loc = (2,2) if 'power_wrong_ingredient_mini1' in layout else (3,2)
+                    tomato_pot_loc = (2,4) if 'power_wrong_ingredient_mini1' in layout else (0,4) 
 
                     # onion pot
-                    if (layout == 'power_wrong_ingredient_mini1' or layout == 'power_wrong_ingredient_mini2') and pot_loc == onion_pot_loc:
+                    if ('power_wrong_ingredient_mini1' in layout or layout == 'power_wrong_ingredient_mini2') and pot_loc == onion_pot_loc:
                         n = int(np.random.randint(low=1, high=4))
                         m = 0
                 
                     # tomato pot
-                    elif (layout == 'power_wrong_ingredient_mini1' or layout == 'power_wrong_ingredient_mini2') and pot_loc == tomato_pot_loc:
+                    elif ('power_wrong_ingredient_mini1' in layout or layout == 'power_wrong_ingredient_mini2') and pot_loc == tomato_pot_loc:
                         m = int(np.random.randint(low=1, high=4))
                         n = 0
 
