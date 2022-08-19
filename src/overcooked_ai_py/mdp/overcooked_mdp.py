@@ -7,6 +7,8 @@ from ..mdp.actions import Action, Direction
 
 import traceback
 
+MIXED_INGREDIENT_PENALTY = -1000
+
 
 class Recipe:
     MAX_NUM_INGREDIENTS = 3
@@ -428,6 +430,13 @@ class SoupState(ObjectState):
         full = not self.is_idle or len(self.ingredients) == Recipe.MAX_NUM_INGREDIENTS
         return full
 
+    @property
+    def mixed_ingredients(self):
+        ings = set()
+        for ing in self._ingredients:
+            ings.add(ing)
+        return len(ings) > 1
+
     def is_valid(self):
         if not all([ingredient.position == self.position for ingredient in self._ingredients]):
             return False
@@ -799,6 +808,7 @@ BASE_REW_SHAPING_PARAMS = {
     "SOUP_DISTANCE_REW": 0,
     "TOMATO_PICKUP_REWARD": 0,
     "ONION_PICKUP_REWARD": 0,
+    # "MIXED_POT_PENALTY", -1000,
 }
 
 EVENT_TYPES = [
@@ -1385,10 +1395,12 @@ class OvercookedGridworld(object):
 
                     # Add ingredient if possible
                     soup = new_state.get_object(i_pos)
-                    if not soup.is_full:
+                    if not soup.is_full and not soup.mixed_ingredients:
                         old_soup = soup.deepcopy()
                         obj = player.remove_object()
                         soup.add_ingredient(obj)
+                        if soup.mixed_ingredients:
+                            sparse_reward[player_idx] += MIXED_INGREDIENT_PENALTY
                         shaped_reward[player_idx] += self.reward_shaping_params["PLACEMENT_IN_POT_REW"]
                         # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
@@ -1684,7 +1696,7 @@ class OvercookedGridworld(object):
         if not state.has_object(pos):
             return False
         obj = state.get_object(pos)
-        return obj.name == 'soup' and not obj.is_cooking and not obj.is_ready and len(obj.ingredients) > 0
+        return obj.name == 'soup' and not obj.is_cooking and not obj.is_ready and len(obj.ingredients) > 0 and not soup.mixed_ingredients
 
     def _check_valid_state(self, state):
         """Checks that the state is valid.
