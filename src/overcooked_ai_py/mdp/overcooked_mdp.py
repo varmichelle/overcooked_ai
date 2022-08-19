@@ -7,7 +7,7 @@ from ..mdp.actions import Action, Direction
 
 import traceback
 
-MIXED_INGREDIENT_PENALTY = -1000
+MIXED_INGREDIENT_PENALTY = -1
 
 
 class Recipe:
