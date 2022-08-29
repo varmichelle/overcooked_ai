@@ -7,7 +7,7 @@ from ..mdp.actions import Action, Direction
 
 import traceback
 
-MIXED_INGREDIENT_PENALTY = -100000
+MIXED_INGREDIENT_PENALTY = -10000
 
 
 class Recipe:
@@ -352,6 +352,7 @@ class SoupState(ObjectState):
         self._cooking_tick = cooking_tick
         self._recipe = None
         self._cook_time = cook_time
+        self._is_close_pot = False
 
     def __eq__(self, other):
         return isinstance(other, SoupState) and self.name == other.name and self.position == other.position and self._cooking_tick == other._cooking_tick and \
@@ -1275,7 +1276,7 @@ class OvercookedGridworld(object):
         new_state = state.deepcopy()
 
         # Resolve interacts first
-        sparse_reward_by_agent, shaped_reward_by_agent = self.resolve_interacts(new_state, joint_action, events_infos)
+        sparse_reward_by_agent, shaped_reward_by_agent, close_pot_usage = self.resolve_interacts(new_state, joint_action, events_infos)
 
         assert new_state.player_positions == state.player_positions
         assert new_state.player_orientations == state.player_orientations
@@ -1292,6 +1293,7 @@ class OvercookedGridworld(object):
             "event_infos": events_infos,
             "sparse_reward_by_agent": sparse_reward_by_agent,
             "shaped_reward_by_agent": shaped_reward_by_agent,
+            "close_pot_usage": close_pot_usage
         }
         if display_phi:
             assert motion_planner is not None, "motion planner must be defined if display_phi is true"
@@ -1308,7 +1310,7 @@ class OvercookedGridworld(object):
         """
         pot_states = self.get_pot_states(new_state)
         # We divide reward by agent to keep track of who contributed
-        sparse_reward, shaped_reward = [0] * self.num_players, [0] * self.num_players 
+        sparse_reward, shaped_reward, close_pot_usage = [0] * self.num_players, [0] * self.num_players, [0] * self.num_players 
 
         for player_idx, (player, action) in enumerate(zip(new_state.players, joint_action)):
 
@@ -1373,6 +1375,8 @@ class OvercookedGridworld(object):
                 if self.soup_to_be_cooked_at_location(new_state, i_pos):
                     soup = new_state.get_object(i_pos)
                     soup.begin_cooking()
+                    is_close_pot = i_pos == (1,3)  # ONLY WORKS FOR MINI 1
+                    soup._is_close_pot = is_close_pot
             
             elif terrain_type == 'P' and player.has_object():
 
@@ -1414,12 +1418,13 @@ class OvercookedGridworld(object):
                 if obj.name == 'soup':
                     delivery_rew = self.deliver_soup(new_state, player, obj, player_idx)
                     sparse_reward[player_idx] += delivery_rew
+                    close_pot_usage[player_idx] += 1 if obj.is_close_pot else 0
                     # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
                     # Log soup delivery
-                    events_infos['soup_delivery'][player_idx] = True                        
+                    events_infos['soup_delivery'][player_idx] = True                    
 
-        return sparse_reward, shaped_reward
+        return sparse_reward, shaped_reward, close_pot_usage
 
     def get_recipe_value(self, state, recipe, discounted=False, base_recipe=None, potential_params={}):
         """
