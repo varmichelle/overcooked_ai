@@ -1418,7 +1418,7 @@ class OvercookedGridworld(object):
                 if obj.name == 'soup':
                     delivery_rew = self.deliver_soup(new_state, player, obj, player_idx)
                     sparse_reward[player_idx] += delivery_rew
-                    close_pot_usage[player_idx] += 1 if obj.is_close_pot else 0
+                    close_pot_usage[player_idx] += 1 if obj._is_close_pot else 0
                     # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
                     # Log soup delivery
