@@ -7,7 +7,7 @@ from ..mdp.actions import Action, Direction
 
 import traceback
 
-MIXED_INGREDIENT_PENALTY = -10000
+MIXED_INGREDIENT_PENALTY = -100000
 
 
 class Recipe:
@@ -1403,9 +1403,9 @@ class OvercookedGridworld(object):
                         old_soup = soup.deepcopy()
                         obj = player.remove_object()
                         soup.add_ingredient(obj)
-                        # # EXPLOSION PENALTY
-                        # if soup.mixed_ingredients:
-                        #     sparse_reward[player_idx] += MIXED_INGREDIENT_PENALTY
+                        # EXPLOSION PENALTY
+                        if soup.mixed_ingredients:
+                            sparse_reward[player_idx] += MIXED_INGREDIENT_PENALTY
                         shaped_reward[player_idx] += self.reward_shaping_params["PLACEMENT_IN_POT_REW"]
                         # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
