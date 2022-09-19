@@ -7,7 +7,7 @@ from ..mdp.actions import Action, Direction
 
 import traceback
 
-MIXED_INGREDIENT_PENALTY = -100000
+EXPLOSION_PENALTY = -10000000
 
 
 class Recipe:
@@ -905,6 +905,21 @@ class OvercookedGridworld(object):
         self._opt_recipe_cache = {}
         self._prev_potential_params = {}
 
+        if layout_name == 'power_wrong_ingredient_mini1_explosion1k':
+            explosion_penalty = 1000
+        elif layout_name == 'power_wrong_ingredient_mini1_explosion10k':
+            explosion_penalty = 10000
+        elif layout_name == 'power_wrong_ingredient_mini1_explosion100k':
+            explosion_penalty = 100000
+        elif layout_name == 'power_wrong_ingredient_mini1_explosion1000k':
+            explosion_penalty = 1000000
+        elif layout_name == 'power_wrong_ingredient_mini1_explosion10000k':
+            explosion_penalty = 10000000
+        else:
+            explosion_penalty = None
+        
+        self.EXPLOSION_PENALTY = explosion_penalty
+
 
     @staticmethod
     def from_layout_name(layout_name, **params_to_overwrite):
@@ -1404,8 +1419,8 @@ class OvercookedGridworld(object):
                         obj = player.remove_object()
                         soup.add_ingredient(obj)
                         # EXPLOSION PENALTY
-                        if soup.mixed_ingredients:
-                            sparse_reward[player_idx] += MIXED_INGREDIENT_PENALTY
+                        if self.EXPLOSION_PENALTY is not None and soup.mixed_ingredients:
+                            sparse_reward[player_idx] += self.EXPLOSION_PENALTY
                         shaped_reward[player_idx] += self.reward_shaping_params["PLACEMENT_IN_POT_REW"]
                         # raise Exception(f'shaped_reward[player_idx] {shaped_reward[player_idx]}')
 
