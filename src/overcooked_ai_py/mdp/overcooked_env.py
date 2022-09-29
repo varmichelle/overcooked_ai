@@ -300,8 +300,24 @@ class OvercookedEnv(object):
                     raise Exception('error getting starting state')
             else:
                 # TEMPORARY MEASURE FOR EVALUATING ON STANDARD START STATE
-                # self.state = self.mdp.get_standard_start_state()
-                self.state = self.start_state_fn()
+                self.state = self.mdp.get_standard_start_state()
+                # self.state = self.start_state_fn()
+
+            events_dict = { k : [ [] for _ in range(self.mdp.num_players) ] for k in EVENT_TYPES }
+            rewards_dict = {
+                "cumulative_sparse_rewards_by_agent": np.array([0.] * self.mdp.num_players),
+                "cumulative_shaped_rewards_by_agent": np.array([0.] * self.mdp.num_players)
+            }
+            self.game_stats = {**events_dict, **rewards_dict}
+        except:
+            raise Exception("uh oh in reset")
+
+    def reset_dr(self):
+        """
+        Resets the environment. Does NOT reset the agent.
+        """
+        try:
+            self.state = self.start_state_fn()
 
             events_dict = { k : [ [] for _ in range(self.mdp.num_players) ] for k in EVENT_TYPES }
             rewards_dict = {
