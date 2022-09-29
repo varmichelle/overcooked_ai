@@ -745,35 +745,34 @@ class Overcooked(gym.Env):
         NOTE: a nicer way to do this would be to just randomize starting positions, and not
         have to deal with randomizing indices.
         """
-        # print("RESET")
         self.base_env.reset()
-        # data = {
-        #     'pos0': (1,1),
-        #     'pos1': (1,4),
-        #     'dir0': Direction.NORTH,
-        #     'dir1': Direction.NORTH,
-        #     't': 90,
-        #     'pot0_n': 0,
-        #     'pot0_m': 0,
-        #     'pot0_cooking_tick': -1,
-        #     'pot1_n': 2,
-        #     'pot1_m': 0,
-        #     'pot1_cooking_tick': -1,
-        #     'pot2_n': 0,
-        #     'pot2_m': 0,
-        #     'pot2_cooking_tick': -1,
-        #     'pot3_n': 0,
-        #     'pot3_m': 0,
-        #     'pot3_cooking_tick': -1,
-        #     'item0': (0,0,0),
-        #     'item1': (0,1,0)
-        # }
-        # self.set_state(data)
         self.mdp = self.base_env.mdp
         # self.agent_idx = np.random.choice([0, 1])
         self.agent_idx = 0
-        # print('TYPE self.base_env.state', type(self.base_env.state))
-        # print('self.base_env.state', self.base_env.state)
+        ob_p0, ob_p1 = self.featurize_fn(self.mdp, self.base_env.state)
+
+        if self.agent_idx == 0:
+            both_agents_ob = (ob_p0, ob_p1)
+        else:
+            both_agents_ob = (ob_p1, ob_p0)
+        return {"both_agent_obs": both_agents_ob, 
+                # "overcooked_state": self.base_env.state, 
+                "other_agent_env_idx": 1 - self.agent_idx,
+                "time": (SMALL_HORIZON-self.base_env.state.timestep)/SMALL_HORIZON}
+
+    def reset_dr(self):
+        """
+        When training on individual maps, we want to randomize which agent is assigned to which
+        starting location, in order to make sure that the agents are trained to be able to 
+        complete the task starting at either of the hardcoded positions.
+
+        NOTE: a nicer way to do this would be to just randomize starting positions, and not
+        have to deal with randomizing indices.
+        """
+        self.base_env.reset_dr()
+        self.mdp = self.base_env.mdp
+        # self.agent_idx = np.random.choice([0, 1])
+        self.agent_idx = 0
         ob_p0, ob_p1 = self.featurize_fn(self.mdp, self.base_env.state)
 
         if self.agent_idx == 0:
