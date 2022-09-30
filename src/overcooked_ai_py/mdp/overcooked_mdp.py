@@ -1085,45 +1085,118 @@ class OvercookedGridworld(object):
             if rnd_obj_prob_thresh == 0:
                 return start_state
 
+        #     # Arbitrary hard-coding for randomization of objects
+        #     # For each pot, add a random amount of onions and tomatoes with prob rnd_obj_prob_thresh
+        #     # Begin the soup cooking with probability rnd_obj_prob_thresh
+        #     pots = self.get_pot_states(start_state)["empty"]
+
+        #     if layout=='power_wrong_ingredient_mini2':
+        #         onion_agent_pots = [(3,2),(1,3)]
+        #         tomato_agent_pots = [(0,4),(2,3)]
+        #         pot_p = np.random.rand()
+        #         if pot_p < 0.2:
+        #             onion_agent_pots = []
+        #         elif pot_p < 0.55:
+        #             onion_agent_pots = onion_agent_pots[0]
+        #         elif pot_p < 0.9:
+        #             onion_agent_pots = onion_agent_pots[1]
+
+        #         pot_p = np.random.rand()
+        #         if pot_p < 0.2:
+        #             tomato_agent_pots = []
+        #         elif pot_p < 0.55:
+        #             tomato_agent_pots = tomato_agent_pots[0]
+        #         elif pot_p < 0.9:
+        #             tomato_agent_pots = tomato_agent_pots[1]
+
+        #     for pot_loc in pots:
+        #         p = np.random.rand()
+        #         populate_pot = (layout=='power_wrong_ingredient_mini2' and (pot_loc in onion_agent_pots or pot_loc in tomato_agent_pots)) or ('power_wrong_ingredient_mini1' in layout and p < rnd_obj_prob_thresh)
+        #         if populate_pot:
+
+        #             onion_pot_loc = (2,2) if 'power_wrong_ingredient_mini1' in layout else (3,2)
+        #             tomato_pot_loc = (2,4) if 'power_wrong_ingredient_mini1' in layout else (0,4) 
+
+        #             # onion pot
+        #             if ('power_wrong_ingredient_mini1' in layout or layout == 'power_wrong_ingredient_mini2') and pot_loc == onion_pot_loc:
+        #                 n = int(np.random.randint(low=1, high=4))
+        #                 m = 0
+                
+        #             # tomato pot
+        #             elif ('power_wrong_ingredient_mini1' in layout or layout == 'power_wrong_ingredient_mini2') and pot_loc == tomato_pot_loc:
+        #                 m = int(np.random.randint(low=1, high=4))
+        #                 n = 0
+
+        #             # mixed pot or otherwise
+        #             else:
+        #                 if p < rnd_obj_prob_thresh/2:
+        #                     n = int(np.random.randint(low=1, high=4))
+        #                     if np.random.rand() < 0.25:
+        #                         m = int(np.random.randint(low=0, high=4-n))
+        #                     else:
+        #                         m = 0
+        #                 else:
+        #                     m = int(np.random.randint(low=1, high=4))
+        #                     if np.random.rand() < 0.25:
+        #                         n = int(np.random.randint(low=0, high=4-m))
+        #                     else:
+        #                         n = 0
+                
+        #             q = np.random.rand()
+        #             if n+m == 3:
+        #                 cooking_tick = 0 if q < rnd_obj_prob_thresh else -1
+        #             else:
+        #                 cooking_tick = 0 if q < 0.1 else -1
+        #             start_state.objects[pot_loc] = SoupState.get_soup(pot_loc, num_onions=n, num_tomatoes=m, cooking_tick=cooking_tick)
+
+        #     # For each player, add a random object with prob rnd_obj_prob_thresh
+        #     for i, player in enumerate(start_state.players):
+        #         p = np.random.rand()
+        #         if p < rnd_obj_prob_thresh:
+        #             # Different objects have different probabilities
+        #             if i == 0:
+        #                 obj = np.random.choice(["dish", "onion", "soup"], p=[0.1, 0.8, 0.1])
+        #                 n = int(np.random.choice(a=[1,2,3],p=[0.1,0.1,0.8]))
+        #                 if np.random.rand() < rnd_obj_prob_thresh:
+        #                     m = int(np.random.randint(low=0, high=4-n))
+        #                 else:
+        #                     m = 0 
+        #             else:
+        #                 obj = np.random.choice(["dish", "tomato", "soup"], p=[0.1, 0.8, 0.1])
+        #                 m = int(np.random.choice(a=[1,2,3],p=[0.1,0.1,0.8]))
+        #                 if np.random.rand() < rnd_obj_prob_thresh:
+        #                     n = int(np.random.randint(low=0, high=4-m))
+        #                 else:
+        #                     n = 0
+        #             if obj == "soup":
+        #                 player.set_object(
+        #                     SoupState.get_soup(player.position, num_onions=n, num_tomatoes=m, finished=True)
+        #                 )
+        #             else:
+        #                 player.set_object(ObjectState(obj, player.position))
+        #     return start_state
+        # return start_state_fn
+
+
+
             # Arbitrary hard-coding for randomization of objects
             # For each pot, add a random amount of onions and tomatoes with prob rnd_obj_prob_thresh
             # Begin the soup cooking with probability rnd_obj_prob_thresh
+
+            mini4 = True
             pots = self.get_pot_states(start_state)["empty"]
-
-            if layout=='power_wrong_ingredient_mini2':
-                onion_agent_pots = [(3,2),(1,3)]
-                tomato_agent_pots = [(0,4),(2,3)]
-                pot_p = np.random.rand()
-                if pot_p < 0.2:
-                    onion_agent_pots = []
-                elif pot_p < 0.55:
-                    onion_agent_pots = onion_agent_pots[0]
-                elif pot_p < 0.9:
-                    onion_agent_pots = onion_agent_pots[1]
-
-                pot_p = np.random.rand()
-                if pot_p < 0.2:
-                    tomato_agent_pots = []
-                elif pot_p < 0.55:
-                    tomato_agent_pots = tomato_agent_pots[0]
-                elif pot_p < 0.9:
-                    tomato_agent_pots = tomato_agent_pots[1]
-
             for pot_loc in pots:
                 p = np.random.rand()
-                populate_pot = (layout=='power_wrong_ingredient_mini2' and (pot_loc in onion_agent_pots or pot_loc in tomato_agent_pots)) or ('power_wrong_ingredient_mini1' in layout and p < rnd_obj_prob_thresh)
-                if populate_pot:
-
-                    onion_pot_loc = (2,2) if 'power_wrong_ingredient_mini1' in layout else (3,2)
-                    tomato_pot_loc = (2,4) if 'power_wrong_ingredient_mini1' in layout else (0,4) 
+                
+                if p < rnd_obj_prob_thresh:
 
                     # onion pot
-                    if ('power_wrong_ingredient_mini1' in layout or layout == 'power_wrong_ingredient_mini2') and pot_loc == onion_pot_loc:
+                    if mini4 and pot_loc == (2,2):
                         n = int(np.random.randint(low=1, high=4))
                         m = 0
                 
                     # tomato pot
-                    elif ('power_wrong_ingredient_mini1' in layout or layout == 'power_wrong_ingredient_mini2') and pot_loc == tomato_pot_loc:
+                    elif mini4 and pot_loc == (2,4):
                         m = int(np.random.randint(low=1, high=4))
                         n = 0
 
@@ -1131,22 +1204,13 @@ class OvercookedGridworld(object):
                     else:
                         if p < rnd_obj_prob_thresh/2:
                             n = int(np.random.randint(low=1, high=4))
-                            if np.random.rand() < 0.25:
-                                m = int(np.random.randint(low=0, high=4-n))
-                            else:
-                                m = 0
+                            m = int(np.random.randint(low=0, high=4-n))
                         else:
                             m = int(np.random.randint(low=1, high=4))
-                            if np.random.rand() < 0.25:
-                                n = int(np.random.randint(low=0, high=4-m))
-                            else:
-                                n = 0
+                            n = int(np.random.randint(low=0, high=4-m))
                 
                     q = np.random.rand()
-                    if n+m == 3:
-                        cooking_tick = 0 if q < rnd_obj_prob_thresh else -1
-                    else:
-                        cooking_tick = 0 if q < 0.1 else -1
+                    cooking_tick = 0 if q < rnd_obj_prob_thresh else -1
                     start_state.objects[pot_loc] = SoupState.get_soup(pot_loc, num_onions=n, num_tomatoes=m, cooking_tick=cooking_tick)
 
             # For each player, add a random object with prob rnd_obj_prob_thresh
@@ -1155,19 +1219,13 @@ class OvercookedGridworld(object):
                 if p < rnd_obj_prob_thresh:
                     # Different objects have different probabilities
                     if i == 0:
-                        obj = np.random.choice(["dish", "onion", "soup"], p=[0.1, 0.8, 0.1])
-                        n = int(np.random.choice(a=[1,2,3],p=[0.1,0.1,0.8]))
-                        if np.random.rand() < rnd_obj_prob_thresh:
-                            m = int(np.random.randint(low=0, high=4-n))
-                        else:
-                            m = 0 
+                        obj = np.random.choice(["dish", "onion", "soup"], p=[0.2, 0.6, 0.2])
+                        n = int(np.random.randint(low=1, high=4))
+                        m = int(np.random.randint(low=0, high=4-n))
                     else:
-                        obj = np.random.choice(["dish", "tomato", "soup"], p=[0.1, 0.8, 0.1])
-                        m = int(np.random.choice(a=[1,2,3],p=[0.1,0.1,0.8]))
-                        if np.random.rand() < rnd_obj_prob_thresh:
-                            n = int(np.random.randint(low=0, high=4-m))
-                        else:
-                            n = 0
+                        obj = np.random.choice(["dish", "tomato", "soup"], p=[0.2, 0.6, 0.2])
+                        m = int(np.random.randint(low=1, high=4))
+                        n = int(np.random.randint(low=0, high=4-m))
                     if obj == "soup":
                         player.set_object(
                             SoupState.get_soup(player.position, num_onions=n, num_tomatoes=m, finished=True)
