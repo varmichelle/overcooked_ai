@@ -1230,7 +1230,7 @@ class OvercookedGridworld(object):
                     # this is a soup
                     n = len([i for i in player_object._ingredients if i.name == 'onion'])
                     m = len([i for i in player_object._ingredients if i.name == 'tomato'])
-                    d = 0
+                    d = 1
                 elif player_object.name == 'onion':
                     n, m, d = 1, 0, 0
                 elif player_object.name == 'tomato':
