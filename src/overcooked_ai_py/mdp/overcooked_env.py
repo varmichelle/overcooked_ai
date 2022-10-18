@@ -312,12 +312,34 @@ class OvercookedEnv(object):
         except:
             raise Exception("uh oh in reset")
 
-    def reset_dr(self):
+    def reset_dr(self, regen_mdp=True, outside_info={}):
         """
         Resets the environment. Does NOT reset the agent.
+        Args:
+            regen_mdp (bool): gives the option of not re-generating mdp on the reset,
+                                which is particularly helpful with reproducing results on variable mdp
+            outside_info (dict): the outside information that will be fed into the scheduling_fn (if used), which will
+                                 in turn generate a new set of mdp_params that is used to regenerate mdp.
+                                 Please note that, if you intend to use this arguments throughout the run,
+                                 you need to have a "initial_info" dictionary with the same keys in the "env_params"
         """
         try:
-            self.state = self.start_state_fn()
+            if regen_mdp:
+                try:
+                    self.mdp = self.mdp_generator_fn(outside_info)
+                except:
+                    raise Exception('error generating mdp')
+                
+                self._mlam = None
+                self._mp = None
+            
+            if self.start_state_fn is None:
+                try:
+                    self.state = self.mdp.get_standard_start_state()
+                except:
+                    raise Exception('error getting starting state')
+            else:
+                self.state = self.start_state_fn()
 
             events_dict = { k : [ [] for _ in range(self.mdp.num_players) ] for k in EVENT_TYPES }
             rewards_dict = {
