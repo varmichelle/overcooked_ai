@@ -1,9 +1,9 @@
 import numpy as np
 
 import random, copy
-from overcooked_ai_py.utils import rnd_int_uniform, rnd_uniform
-from overcooked_ai_py.mdp.actions import Action, Direction
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld, Recipe
+from ..utils import rnd_int_uniform, rnd_uniform
+from ..mdp.actions import Action, Direction
+from ..mdp.overcooked_mdp import OvercookedGridworld, Recipe
 
 EMPTY = ' '
 COUNTER = 'X'

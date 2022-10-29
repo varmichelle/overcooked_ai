@@ -1,6 +1,6 @@
 import pygame
 from pygame.locals import HWSURFACE, DOUBLEBUF, RESIZABLE, QUIT, VIDEORESIZE
-from overcooked_ai_py.utils import load_from_json
+from ..utils import load_from_json
 
 def run_static_resizeable_window(surface, fps=30):
     """
